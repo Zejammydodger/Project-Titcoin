@@ -1,4 +1,4 @@
-import os
+import os , json
 
 class DataClass:
     # uses the dir() method and filters dunders to save any object to a json file
@@ -38,6 +38,12 @@ class DataClass:
         for attr in attribs.keys():
             setattr(self, attr , attribs[attr])
 
+class Profile(DataClass):
+    def __init__(self) -> None:
+        super().__init__()
+        self.id = 0
+        self.balance = 0
+
 
 class JSONHandler:
     #implements a load and dump function
@@ -46,9 +52,24 @@ class JSONHandler:
         assert path.endswith(".json") , "path must point to a json file"
         self.path = path
         
-    def load(self) -> dict:
-        pass
+    def loadMain(self) -> list:
+        #loads the main.json file
+        #returns a list of Profile dataClasses 
+        with open(self.path , "r") as F:
+            data = json.load(F)
+            
+        data = data["profiles"]
+        profiles = []
+        for p in data:
+            profiles.append(Profile().populateFromDict(p))
+        
     
-    def dump(self , data : dict):
-        pass
+    def dumpMain(self , data : list):
+        #dumps a list of profiles to main.json
+        dictList = []
+        for p in data: 
+            dictList.append(p.JSONify())
+        dump = {"profiles" : dictList}
+        with open(self.path , "w") as F:
+            json.dump(dump , F)
     
