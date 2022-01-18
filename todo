@@ -1,0 +1,10 @@
+json layout
+json file loading / decrypting / dehashing, whatever i decide to go with for tamper protection
+titcoin module so that it can be instantiated and added to the bots globals and used across extensions
+    - contains methods for getting a users "profile"
+    - updateing a users "profile"
+
+    "profile"
+        - discord user id
+        - TC balance
+        - win loss percentage for all gambleing float value for each
