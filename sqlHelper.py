@@ -154,7 +154,7 @@ class Profile:
         cur = connection.cursor()
         cur.execute("USE TitCoin; SELECT PID FROM Profiles WHERE discordID = %s" , (self.discordID,))
         PID = cur.fetchone()
-        print(f"PID from getPID = {PID} where did = {self.discordID}")
+        #print(f"PID from getPID = {PID} where did = {self.discordID}")
         return PID
         
     def updateBalanceHist(self):
@@ -287,13 +287,13 @@ def save(connection : Conn.MySQLConnection , database : dict):
     #}
     #we only care about profiles here
     profiles : dict[int : Profile] = database["profiles"]
-    print(profiles)
+    print("Saveing ...")
     for discordID , P in profiles.items():
         P : Profile
         P.INSERT(connection) #and that should do it?
         connection.reconnect()
-        print(f"saved [{discordID}]")
-    
+        #print(f"saved [{discordID}]")
+    print("saved")
 
 def load(connection : Conn.MySQLConnection) -> dict:
     #loads all data in then contructs all of the required objects makeing sure to reference where possible
