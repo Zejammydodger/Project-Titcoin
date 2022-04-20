@@ -14,24 +14,32 @@ class DataClass:
                 temp = getattr(self , attr)
                 #if temp is a list, loop over and convert any dataclass types to 
 
-            if type(temp) == type(self.JSONify):
+            if type(temp) == type(self.JSONify) or type(temp) == type(self.populateFromDict):
+                # if temp is function, continue
                 continue
             
             if type(temp) == list:
+                # if temp = list
                 for ie , e in enumerate(temp):
+                    #index, element 
                     if isinstance(e , DataClass):
+                        # if element is dataclass replace element with json serialized data class
                         temp[ie] = e.JSONify()
 
             elif type(temp) == dict:
+                # if temp = dict
                 for key , e in temp.items():
+                    # key , element
                     if isinstance(e , DataClass):
+                        # if element is a dataclass, replace with json serialized
                         temp[key] = e.JSONify()
 
             
             #if temp has JSONify, call that
-            if isinstance(e , DataClass):
-                temp = e.JSONify()
+            #if isinstance(e , DataClass):
+            #    temp = e.JSONify()
         dataDict[attr] = temp
+        print(dataDict)
         return dataDict
 
     def populateFromDict(self , attribs : dict):
@@ -61,7 +69,10 @@ class JSONHandler:
         data = data["profiles"]
         profiles = []
         for p in data:
-            profiles.append(Profile().populateFromDict(p))
+            prof = Profile()
+            prof.populateFromDict(p)
+            profiles.append(prof)
+        return profiles
         
     
     def dumpMain(self , data : list):
