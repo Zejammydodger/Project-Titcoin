@@ -13,6 +13,7 @@ connection = initDataBase()
 
 profiles : dict[str : dict | list] = load(connection) 
     #{"profiles" : { discordID : Profile } , "companies" : [Company]}
+print(profiles)
 percs = []
 tiddleton : discord.Guild = None
 
@@ -269,11 +270,13 @@ class TitCoin(commands.Cog):
         assert self.tiddleton is not None , "Bot not in tiddleton"
         self.bot.loop.create_task(self.randomAward())
         for mem in self.tiddleton.members:
-            if mem.id not in profiles.keys():
+            if mem.id not in profiles["profiles"].keys():
                 p = Profile(blankHistory() , mem.id)
                 profiles["profiles"][mem.id] = p
                 
                 print(f"profile added: {p}\n\t{p.discordID}\n\t{p.currentBal}\n")
+                
+        save(connection , profiles)
         
                 
     @commands.Cog.listener()
@@ -296,7 +299,7 @@ class TitCoin(commands.Cog):
         #with some other funky stuff
         if user == None:
             user = ctx.author
-        richest : Profile = max(profiles.values() , key = lambda x : x.currentBal)
+        richest : Profile = max(profiles["profiles"].values() , key = lambda x : x.currentBal)
         isrichest : bool = user.id == richest.discordID
         prof = profiles["profiles"][user.id]
         embed = prof.getEmbed(user , isrichest)
@@ -305,7 +308,7 @@ class TitCoin(commands.Cog):
     @commands.command()
     async def leaderboard(self , ctx : commands.Context):
         #get top 10 wealthiest people in tiddleton
-        profs = sorted(profiles.values() , key = lambda x : x.currentBal , reverse=True)[:10]
+        profs = sorted(profiles["profiles"].values() , key = lambda x : x.currentBal , reverse=True)[:10]
         maxBal = profs[0].currentBal
         digits = lambda x : math.floor(math.log10(x if x > 0 else x + 1)) + 1
         lenDigits = digits(len(profs))
@@ -387,7 +390,7 @@ class TitCoin(commands.Cog):
     @commands.command()
     async def wealthDist(self , ctx : commands.Context, top : int = 20 , granularity : int = 10):
         # produces a leaderboard type thing but its a percentage distribution of wealth, ie #1 == 100% and #2 is some percentage of #1
-        profs = sorted(profiles.values() , key = lambda x : x.currentBal , reverse=True)[:top]
+        profs = sorted(profiles["profiles"].values() , key = lambda x : x.currentBal , reverse=True)[:top]
         maxBal = profs[0].currentBal
         board = ""
         for i , prof in enumerate(profs):

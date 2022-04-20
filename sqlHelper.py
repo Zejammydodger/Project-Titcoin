@@ -2,6 +2,7 @@ import mysql , os
 import mysql.connector
 import mysql.connector.connection as Conn
 import datetime
+import discord
 
 
 #NOTE need a way to delete oldest record of balance and worth by PID and CID respectivily
@@ -64,7 +65,8 @@ def executeScript(pathToScript : str , connection : Conn.MySQLConnection , *args
             newArgs.append(arg)
     args = tuple(newArgs)
     statement = statement.format(*args)
-    print(f"{'='*20}\nexecuteing:\n{statement}\n{'='*20}")
+    #print(f"{'='*20}\nexecuteing:\n{statement}\n{'='*20}")
+    print(f"executeing : {pathToScript}")
     cursor.execute(statement)
     data = cursor.fetchall()
     assert cursor.close() , "cursor did not close properly"
@@ -96,6 +98,13 @@ class Profile:
         self.currentBal = list(self.balanceHist.values())[0] 
         self.company = None
         self.shares = []
+        
+    
+    def getEmbed(self , user : discord.Member , richest : bool) -> discord.Embed:
+        title = f"Titcoin balance for [{user.display_name}]"
+        desc = f"Your total Titcoin Balance is:\n`{self.currentBal}tc`\n{'**You are the wealthiest person in tiddleton**' if richest else ''}"
+        colour = 0xFFD700 if richest else 0x000000
+        return discord.Embed(title = title , description = desc , colour = colour)
         
     def INSERT(self , connection : Conn.MySQLConnection):
         connection.reconnect()
@@ -143,7 +152,7 @@ class Profile:
         
     def getPID(self , connection : Conn.MySQLConnection):
         cur = connection.cursor()
-        cur.execute("USE TitCoin; SELECT PID FROM Profiles WHERE discordID = %s" , self.discordID)
+        cur.execute("USE TitCoin; SELECT PID FROM Profiles WHERE discordID = %s" , (self.discordID,))
         PID = cur.fetchone()
         print(f"PID from getPID = {PID} where did = {self.discordID}")
         return PID
@@ -278,9 +287,11 @@ def save(connection : Conn.MySQLConnection , database : dict):
     #}
     #we only care about profiles here
     profiles : dict[int : Profile] = database["profiles"]
+    print(profiles)
     for discordID , P in profiles.items():
         P : Profile
         P.INSERT(connection) #and that should do it?
+        connection.reconnect()
         print(f"saved [{discordID}]")
     
 
@@ -339,6 +350,7 @@ def load(connection : Conn.MySQLConnection) -> dict:
 
 #create a test database connection just to be sure
 if __name__ == "__main__":
+    quit() # in case i accidentally run this file
     connection = initDataBase()
     P = Profile(blankHistory() , 0)
     db = {"profiles" : {P.discordID : P} , "companies" : []}
