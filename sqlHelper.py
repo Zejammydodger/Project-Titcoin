@@ -289,15 +289,18 @@ def load(connection : Conn.MySQLConnection) -> dict:
     #start by selecting all Profile , company and share data
     connection.reconnect()
     profileData = Profile.SELECTALL(connection) # [{"PID" : pid , "discordID" : did}]
-    companyData = Company.SELECTALL(connection) # [{"PID" : pid , "CID" : cid}]
-    shareData = Share.SELECTALL(connection)     # [{"PID" : pid , "CID" : cid , "percent" : perc}]
     connection.reconnect()
+    companyData = Company.SELECTALL(connection) # [{"PID" : pid , "CID" : cid}]
+    connection.reconnect()
+    shareData = Share.SELECTALL(connection)     # [{"PID" : pid , "CID" : cid , "percent" : perc}]
+    connection.reconnect() # these reconnects are rediculous
     
     profiles = {} # PID : Profile[incomplete]
     for pDat in profileData:
         PID = pDat["PID"]
         DID = pDat["discordID"]
         balHist = Profile.getBalanceHist(connection , PID)
+        connection.reconnect()
         hist = {}
         for dat in balHist:
             hist[dat["created"]] = dat["balance"]
@@ -310,6 +313,7 @@ def load(connection : Conn.MySQLConnection) -> dict:
         owner = profiles[PID]
         name = cDat["name"]
         worthHist = Company.getWorthHist(connection , CID)
+        connection.reconnect()
         hist = {}
         for dat in worthHist:
             hist[dat["created"]] = dat["worth"]

@@ -273,7 +273,7 @@ class TitCoin(commands.Cog):
                 p = Profile(blankHistory() , mem.id)
                 profiles["profiles"][mem.id] = p
                 
-                print(f"profile added: {p}\n\t{p.id}\n\t{p.balance}\n")
+                print(f"profile added: {p}\n\t{p.discordID}\n\t{p.currentBal}\n")
         
                 
     @commands.Cog.listener()
@@ -284,7 +284,7 @@ class TitCoin(commands.Cog):
         else:
             asyncio.create_task(cooldownFunc(message.author.id))
             try:
-                profiles["profiles"][message.author.id].balance += messageVal
+                profiles["profiles"][message.author.id].currentBal += messageVal
             except KeyError:
                 print(f"[{message.author.id}]['{message.author.display_name}'] not found, adding to system")
                 P = Profile(blankHistory(balance = messageVal) , message.author.id)
@@ -296,8 +296,8 @@ class TitCoin(commands.Cog):
         #with some other funky stuff
         if user == None:
             user = ctx.author
-        richest : Profile = max(profiles.values() , key = lambda x : x.balance)
-        isrichest : bool = user.id == richest.id
+        richest : Profile = max(profiles.values() , key = lambda x : x.currentBal)
+        isrichest : bool = user.id == richest.discordID
         prof = profiles["profiles"][user.id]
         embed = prof.getEmbed(user , isrichest)
         await ctx.send(embed = embed)
@@ -305,15 +305,15 @@ class TitCoin(commands.Cog):
     @commands.command()
     async def leaderboard(self , ctx : commands.Context):
         #get top 10 wealthiest people in tiddleton
-        profs = sorted(profiles.values() , key = lambda x : x.balance , reverse=True)[:10]
-        maxBal = profs[0].balance
+        profs = sorted(profiles.values() , key = lambda x : x.currentBal , reverse=True)[:10]
+        maxBal = profs[0].currentBal
         digits = lambda x : math.floor(math.log10(x if x > 0 else x + 1)) + 1
         lenDigits = digits(len(profs))
         maxBalDigits = digits(maxBal)
         board = ""
         for i , prof in enumerate(profs):
-            user = ctx.guild.get_member(prof.id)
-            board += f"[{i+1}{' ' * (lenDigits - digits(i+1))}] | [{prof.balance}{' ' * (maxBalDigits - digits(prof.balance))}] | {user.display_name}\n"
+            user = ctx.guild.get_member(prof.discordID)
+            board += f"[{i+1}{' ' * (lenDigits - digits(i+1))}] | [{prof.currentBal}{' ' * (maxBalDigits - digits(prof.currentBal))}] | {user.display_name}\n"
             
         embed = discord.Embed(title = "Top 10 Richest people in Tiddleton" , description = f"```{board}```")
         await ctx.send(embed = embed)
@@ -366,8 +366,8 @@ class TitCoin(commands.Cog):
         messageAmount : discord.Message = await self.bot.wait_for("message" , check = checkAuthorAndInt(user1) , timeout=60)
         amount : int = int(messageAmount.content)
         
-        while profile2.balance < amount:
-            await dialog(f"[{user2.display_name}] does not possess the funds to make this trade, please choose an amount less than or equal to [{profile2.balance}]")
+        while profile2.currentBal < amount:
+            await dialog(f"[{user2.display_name}] does not possess the funds to make this trade, please choose an amount less than or equal to [{profile2.currentBal}]")
             await dialog(f"How much do you want for [{contents}]")
             messageAmount : discord.Message = await self.bot.wait_for("message" , check = checkAuthorAndInt(user1) , timeout=60)
             amount : int = int(messageAmount.content)
@@ -376,8 +376,8 @@ class TitCoin(commands.Cog):
         response : discord.Message = await self.bot.wait_for("message" , check = checkAuthorAndresponse(user2) , timeout=60)
         if response.content == "accept":
             #trade accepted
-            profile2.balance -= amount
-            profile1.balance += amount
+            profile2.currentBal -= amount
+            profile1.currentBal += amount
             #recordTrade(user1.id , user2.id , f"[{user1.name}] sold [{user2.name}] ['{contents}'] for [{amount}]")
             await ctx.send(embed = discord.Embed(title = "Trade accepted" , color = 0x00ff00))
         else:
@@ -387,12 +387,12 @@ class TitCoin(commands.Cog):
     @commands.command()
     async def wealthDist(self , ctx : commands.Context, top : int = 20 , granularity : int = 10):
         # produces a leaderboard type thing but its a percentage distribution of wealth, ie #1 == 100% and #2 is some percentage of #1
-        profs = sorted(profiles.values() , key = lambda x : x.balance , reverse=True)[:top]
-        maxBal = profs[0].balance
+        profs = sorted(profiles.values() , key = lambda x : x.currentBal , reverse=True)[:top]
+        maxBal = profs[0].currentBal
         board = ""
         for i , prof in enumerate(profs):
-            user : discord.Member = ctx.guild.get_member(prof.id)
-            perc = math.ceil(prof.balance / maxBal * granularity)
+            user : discord.Member = ctx.guild.get_member(prof.discordID)
+            perc = math.ceil(prof.currentBal / maxBal * granularity)
             board += f"[{'#' * perc}{' ' * (granularity - perc)}] - {user.display_name}\n"
             
         await ctx.send(embed = discord.Embed(title = f"distribution of wealth in tiddleton" , description = f"```{board}```"))
