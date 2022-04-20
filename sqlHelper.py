@@ -287,9 +287,11 @@ def save(connection : Conn.MySQLConnection , database : dict):
 def load(connection : Conn.MySQLConnection) -> dict:
     #loads all data in then contructs all of the required objects makeing sure to reference where possible
     #start by selecting all Profile , company and share data
+    connection.reconnect()
     profileData = Profile.SELECTALL(connection) # [{"PID" : pid , "discordID" : did}]
     companyData = Company.SELECTALL(connection) # [{"PID" : pid , "CID" : cid}]
     shareData = Share.SELECTALL(connection)     # [{"PID" : pid , "CID" : cid , "percent" : perc}]
+    connection.reconnect()
     
     profiles = {} # PID : Profile[incomplete]
     for pDat in profileData:
