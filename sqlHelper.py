@@ -77,7 +77,7 @@ def initDataBase() -> Conn.MySQLConnection:
     c = mysql.connector.connect(
         host = "127.0.0.1",
         username = "root",
-        password = "Skullduggery3.1415", #really gotta change this, like quickly
+        password = "", #really gotta change this, like quickly
         #autocommit = True
     )
     path = "scripts/setup.sql"
