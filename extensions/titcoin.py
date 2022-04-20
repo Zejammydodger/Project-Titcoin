@@ -1,14 +1,18 @@
 import time
 import discord , asyncio , math , random , datetime
 from discord.ext import commands , tasks
-from titcoinHelpers import Profile , load , save , NoVoice , Denied
+from titcoinHelpers import NoVoice , Denied
+from sqlHelper import Profile , Company , Share , load , save , initDataBase , blankHistory
 
 #the actual titcoin functionality
 
 cooldown : list[int] = [] # a list of userIDs that represents users on cooldown
 cooldownTime = 60
 
-profiles : dict[int , Profile] = load()
+connection = initDataBase()
+
+profiles : dict[str : dict | list] = load(connection) 
+    #{"profiles" : { discordID : Profile } , "companies" : [Company]}
 percs = []
 tiddleton : discord.Guild = None
 
@@ -71,8 +75,8 @@ class Perc(commands.Cog):
     def hasFunds(self):
         def memHasFundsCheck(ctx : commands.Context):
             #stops the command based on weather the member has enough tc to use this command
-            P = profiles[ctx.author.id]
-            return P.balance >= self.currentPrice
+            P = profiles["profiles"][ctx.author.id]
+            return P.currentBal >= self.currentPrice
         return memHasFundsCheck
     
     def confirmed(self):
@@ -98,8 +102,8 @@ class Perc(commands.Cog):
         # modifies the price of the command
         # god i hope this only goes off if the actual command is run ;-;
         self.currentPrice += self.currentPrice * 0.1
-        P = profiles[ctx.author.id]
-        P.balance -= self.currentPrice
+        P = profiles["profiles"][ctx.author.id]
+        P.currentBal -= self.currentPrice
     
     async def checkFail(self , _ , ctx , error):
         #print(f"_ : {_}  ctx : {ctx}   err : {error}")
@@ -236,8 +240,8 @@ class TitCoin(commands.Cog):
             msg : discord.Message = await chosenChannel.send(embed = e)
             message : discord.Message = await self.bot.wait_for("message" , check = messageCheck)
             if message is not None:
-                P = profiles[message.author.id]
-                P.balance += ammount
+                P = profiles["profiles"][message.author.id]
+                P.currentBal += ammount
             await msg.delete(delay=5)
             
             await asyncio.sleep(60 * 60 * random.randint(1 , 3))
@@ -254,8 +258,8 @@ class TitCoin(commands.Cog):
             if numConnected > 0:
                 for mem in VC.members:
                     mem : discord.Member
-                    P = profiles[mem.id]
-                    P.balance += (voiceVal * numConnected) 
+                    P = profiles["profiles"][mem.id]
+                    P.currentBal += (voiceVal * numConnected) 
 
     @commands.Cog.listener()
     async def on_ready(self):
@@ -266,8 +270,8 @@ class TitCoin(commands.Cog):
         self.bot.loop.create_task(self.randomAward())
         for mem in self.tiddleton.members:
             if mem.id not in profiles.keys():
-                p = Profile(mem.id)
-                profiles[mem.id] = p
+                p = Profile(blankHistory() , mem.id)
+                profiles["profiles"][mem.id] = p
                 
                 print(f"profile added: {p}\n\t{p.id}\n\t{p.balance}\n")
         
@@ -280,11 +284,11 @@ class TitCoin(commands.Cog):
         else:
             asyncio.create_task(cooldownFunc(message.author.id))
             try:
-                profiles[message.author.id].balance += messageVal
+                profiles["profiles"][message.author.id].balance += messageVal
             except KeyError:
                 print(f"[{message.author.id}]['{message.author.display_name}'] not found, adding to system")
-                P = Profile(message.author.id , balance = messageVal)
-                profiles[message.author.id] = P
+                P = Profile(blankHistory(balance = messageVal) , message.author.id)
+                profiles["profiles"][message.author.id] = P
                 
     @commands.command()
     async def titcoin(self , ctx : commands.Context , user : discord.Member = None):
@@ -294,7 +298,7 @@ class TitCoin(commands.Cog):
             user = ctx.author
         richest : Profile = max(profiles.values() , key = lambda x : x.balance)
         isrichest : bool = user.id == richest.id
-        prof = profiles[user.id]
+        prof = profiles["profiles"][user.id]
         embed = prof.getEmbed(user , isrichest)
         await ctx.send(embed = embed)
         
@@ -350,8 +354,8 @@ class TitCoin(commands.Cog):
         # 'globals'
         user1 : discord.Member = ctx.author
         dialog = lambda x : ctx.send(embed = discord.Embed(title = f"[{user1.display_name}] <-> [{user2.display_name}]" , description = x))
-        profile1 : Profile = profiles[user1.id]
-        profile2 : Profile = profiles[user2.id]
+        profile1 : Profile = profiles["profiles"][user1.id]
+        profile2 : Profile = profiles["profiles"][user2.id]
         
         
         await dialog("What are you selling?")
@@ -404,7 +408,7 @@ class TitCoin(commands.Cog):
     ### cog unload
     def cog_unload(self):
         print("unloading...")
-        save(profiles)
+        save(connection , profiles)
         return super().cog_unload()
     
 def setup(bot):

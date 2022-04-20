@@ -77,13 +77,16 @@ def initDataBase() -> Conn.MySQLConnection:
     c = mysql.connector.connect(
         host = "127.0.0.1",
         username = "root",
-        password = "", #really gotta change this, like quickly
+        password = os.getenv("password"),
         #autocommit = True
     )
     path = "scripts/setup.sql"
     executeScript(path , c)
     print(c)
     return c
+
+def blankHistory(balance = 0.0) -> dict[datetime.datetime : float]:
+    return {datetime.datetime.now() : balance}
 
 class Profile:
     def __init__(self , balanceHist : dict[datetime.datetime : float] , discordID : int):
