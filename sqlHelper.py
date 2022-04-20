@@ -68,17 +68,18 @@ def executeScript(pathToScript : str , connection : Conn.MySQLConnection , *args
     cursor.execute(statement)
     data = cursor.fetchall()
     assert cursor.close() , "cursor did not close properly"
-    connection.reconnect()
-    connection.commit()
+    
+    #connection.commit()
     return data
 
 def initDataBase() -> Conn.MySQLConnection:
     #ensures the database has its tables n such
+    with open("secrets/password.txt" , "r") as F: #lmao
+        pword = F.readline()
     c = mysql.connector.connect(
         host = "127.0.0.1",
         username = "root",
-        password = os.getenv("password"),
-        #autocommit = True
+        password = pword 
     )
     path = "scripts/setup.sql"
     executeScript(path , c)
@@ -333,5 +334,7 @@ def load(connection : Conn.MySQLConnection) -> dict:
 #create a test database connection just to be sure
 if __name__ == "__main__":
     connection = initDataBase()
-    P = Profile({datetime.datetime.now() : 0.0} , 0)
-    P.INSERT(connection)
+    P = Profile(blankHistory() , 0)
+    db = {"profiles" : {P.discordID : P} , "companies" : []}
+    save(connection , db)
+    
