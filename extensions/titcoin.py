@@ -13,7 +13,7 @@ connection = initDataBase()
 
 profiles : dict[str : dict | list] = load(connection) 
     #{"profiles" : { discordID : Profile } , "companies" : [Company]}
-print(profiles)
+#print(profiles)
 percs = []
 tiddleton : discord.Guild = None
 
@@ -104,7 +104,7 @@ class Perc(commands.Cog):
         # god i hope this only goes off if the actual command is run ;-;
         self.currentPrice += self.currentPrice * 0.1
         P = profiles["profiles"][ctx.author.id]
-        P.currentBal -= self.currentPrice
+        P.addBal(-self.currentPrice)
     
     async def checkFail(self , _ , ctx , error):
         #print(f"_ : {_}  ctx : {ctx}   err : {error}")
@@ -242,7 +242,7 @@ class TitCoin(commands.Cog):
             message : discord.Message = await self.bot.wait_for("message" , check = messageCheck)
             if message is not None:
                 P = profiles["profiles"][message.author.id]
-                P.currentBal += ammount
+                P.addBal(ammount)
             await msg.delete(delay=5)
             
             await asyncio.sleep(60 * 60 * random.randint(1 , 3))
@@ -260,7 +260,7 @@ class TitCoin(commands.Cog):
                 for mem in VC.members:
                     mem : discord.Member
                     P = profiles["profiles"][mem.id]
-                    P.currentBal += (voiceVal * numConnected) 
+                    P.addBal(voiceVal * numConnected) 
 
     @commands.Cog.listener()
     async def on_ready(self):
@@ -273,7 +273,7 @@ class TitCoin(commands.Cog):
                 p = Profile(blankHistory() , mem.id)
                 profiles["profiles"][mem.id] = p
                 
-                print(f"profile added: {p}\n\t{p.discordID}\n\t{p.currentBal}\n")
+                #print(f"profile added: {p}\n\t{p.discordID}\n\t{p.currentBal}\n")
         
         #self.bot.loop.create_task(self.randomAward()) #ill add this back at some point
                 
@@ -287,7 +287,7 @@ class TitCoin(commands.Cog):
         else:
             asyncio.create_task(cooldownFunc(message.author.id))
             try:
-                profiles["profiles"][message.author.id].currentBal += messageVal
+                profiles["profiles"][message.author.id].addBal(messageVal)
             except KeyError:
                 print(f"[{message.author.id}]['{message.author.display_name}'] not found, adding to system")
                 P = Profile(blankHistory(balance = messageVal) , message.author.id)
@@ -379,8 +379,8 @@ class TitCoin(commands.Cog):
         response : discord.Message = await self.bot.wait_for("message" , check = checkAuthorAndresponse(user2) , timeout=60)
         if response.content == "accept":
             #trade accepted
-            profile2.currentBal -= amount
-            profile1.currentBal += amount
+            profile2.addBal(-amount)
+            profile1.addBal(amount)
             #recordTrade(user1.id , user2.id , f"[{user1.name}] sold [{user2.name}] ['{contents}'] for [{amount}]")
             await ctx.send(embed = discord.Embed(title = "Trade accepted" , color = 0x00ff00))
         else:

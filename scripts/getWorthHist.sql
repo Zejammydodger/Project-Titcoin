@@ -1,2 +1,1 @@
-SET @CID = {};
-SELECT created , worth FROM WorthHistory WHERE CID = @CID LIMIT 30;
+SELECT created , worth FROM WorthHistory WHERE CID = {} LIMIT 30;

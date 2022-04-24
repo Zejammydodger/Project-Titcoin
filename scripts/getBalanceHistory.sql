@@ -1,2 +1,1 @@
-SET @PID = {};
-SELECT balance , created FROM BalanceHistory WHERE PID = @PID LIMIT 30;
+SELECT balance , created FROM BalanceHistory WHERE PID = {} LIMIT 30;
