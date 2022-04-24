@@ -268,15 +268,15 @@ class TitCoin(commands.Cog):
          # tiddleton
         self.tiddleton = self.bot.get_guild(693537199500689439)
         assert self.tiddleton is not None , "Bot not in tiddleton"
-        self.bot.loop.create_task(self.randomAward())
         for mem in self.tiddleton.members:
             if mem.id not in profiles["profiles"].keys():
                 p = Profile(blankHistory() , mem.id)
                 profiles["profiles"][mem.id] = p
                 
                 print(f"profile added: {p}\n\t{p.discordID}\n\t{p.currentBal}\n")
+        
+        #self.bot.loop.create_task(self.randomAward()) #ill add this back at some point
                 
-        save(connection , profiles)
         
                 
     @commands.Cog.listener()

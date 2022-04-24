@@ -110,20 +110,19 @@ class Profile:
         connection.reconnect()
         executeScript("scripts/insertProfile.sql" , connection , self.discordID) # ensures there is a profile in the DB with the discordID
         connection.reconnect() # wow i really have to do that all the time
-        PID = self.getPID(connection) #gets the auto generated PID 
-        
+        print("heya")
         if self.company is not None:
             #need a way to get CID
-            CID = self.company.getCID(connection , PID)
-            self.company.INSERT(connection , PID , CID)
+            CID = self.company.getCID(connection , self.discordID)
+            self.company.INSERT(connection , self.discordID , CID)
         
         for DT , bal in self.balanceHist.items():
             DT = datetimeToStr(DT)
-            executeScript("scripts/insertBalance.sql" , connection , PID , bal , DT)
+            executeScript("scripts/insertBalance.sql" , connection , self.discordID , bal , DT)
         
         for s in self.shares:
-            CID = s.company.getCID(connection , s.profile.getPID(connection))
-            s.INSERT(connection , PID , CID)
+            CID = s.company.getCID(connection , self.discordID)
+            s.INSERT(connection , self.discordID , CID)
         
     @staticmethod
     def SELECTALL(connection : Conn.MySQLConnection) -> list[dict[str : int]]:
@@ -132,15 +131,15 @@ class Profile:
         cur = connection.cursor()
         cur.execute("USE TitCoin; SELECT * FROM Profiles")
         result = cur.fetchall()
-        #[(PID , discordID)]
+        #[(discordID)]
         returnList = []
-        for pid , did in result:
-            returnList.append({"PID" : pid , "discordID" : did})
+        for did in result:
+            returnList.append({"discordID" : did})
         return returnList
     
     @staticmethod
-    def getBalanceHist(connection : Conn.MySQLConnection , PID) -> list[dict[str : int]]:
-        rows = executeScript("scripts/getBalanceHistory.sql" , connection , (PID,))
+    def getBalanceHist(connection : Conn.MySQLConnection , discordID) -> list[dict[str : int]]:
+        rows = executeScript("scripts/getBalanceHistory.sql" , connection , (discordID,))
         retList = []
         for r in rows:
             temp = {
@@ -149,13 +148,16 @@ class Profile:
             }
             retList.append(temp)
         return retList
-        
+    """
+    dont need this anymore 
     def getPID(self , connection : Conn.MySQLConnection):
         cur = connection.cursor()
-        cur.execute("USE TitCoin; SELECT PID FROM Profiles WHERE discordID = %s" , (self.discordID,))
-        PID = cur.fetchone()
+        cur.execute("USE TitCoin; SELECT * FROM Profiles WHERE discordID = %s" , (self.discordID,))
+        print("heya")
+        PID , discordID = cur.fetchone()
         #print(f"PID from getPID = {PID} where did = {self.discordID}")
         return PID
+    """
         
     def updateBalanceHist(self):
         now = datetime.datetime.now()
@@ -177,9 +179,9 @@ class Share:
         self.percentage = percentage
         self.ID = sid
     
-    def INSERT(self , connection : Conn.MySQLConnection , PID , CID):
+    def INSERT(self , connection : Conn.MySQLConnection , discordID , CID):
         #no need to worry about inserting company, thats done from profile
-        executeScript("scripts/insertShare.sql" , connection , (PID , CID , self.percentage , self.ID))
+        executeScript("scripts/insertShare.sql" , connection , (discordID , CID , self.percentage , self.ID))
     
     @staticmethod
     def SELECTALL(connection : Conn.MySQLConnection) -> list[dict[str : int]]:
@@ -188,9 +190,9 @@ class Share:
         cur.execute("USE TitCoin; SELECT * FROM Shares")
         results = cur.fetchall() #(pid , cid , perc)
         retList = []
-        for pid , cid , perc in results:
+        for did , cid , perc in results:
             temp = {
-                "PID" : pid,
+                "discordID" : did,
                 "CID" : cid,
                 "percent" : perc
             }
@@ -215,13 +217,13 @@ class Company:
         self.currentWorth = self.balanceHist.values()[0]
         self.name = name
         
-    def getCID(self , connection : Conn.MySQLConnection , PID) -> int:
+    def getCID(self , connection : Conn.MySQLConnection , discordID) -> int:
         #this is probably gonna do way too many queries but ehhhh
         pass
         
-    def INSERT(self , connection : Conn.MySQLConnection , PID , CID):
+    def INSERT(self , connection : Conn.MySQLConnection , discordID , CID):
         #dont have to worry about shares or profile
-        executeScript("scripts/insertCompany.sql" , connection , (PID , self.name))
+        executeScript("scripts/insertCompany.sql" , connection , (discordID , self.name))
         for date , worth in self.worthHist.items():
             date : datetime.datetime
             date = datetimeToStr(date)
@@ -234,9 +236,9 @@ class Company:
         cur.execute("USE TitCoin; SELECT * FROM Shares")
         results = cur.fetchall() #(cid , pid)
         retList = []
-        for cid , pid , name in results:
+        for cid , did , name in results:
             temp = {
-                "PID" : pid,
+                "discordID" : did,
                 "CID" : cid,
                 "name" : name
             }
@@ -291,7 +293,7 @@ def save(connection : Conn.MySQLConnection , database : dict):
     for discordID , P in profiles.items():
         P : Profile
         P.INSERT(connection) #and that should do it?
-        connection.reconnect()
+        #connection.reconnect()
         #print(f"saved [{discordID}]")
     print("saved")
 
@@ -299,29 +301,28 @@ def load(connection : Conn.MySQLConnection) -> dict:
     #loads all data in then contructs all of the required objects makeing sure to reference where possible
     #start by selecting all Profile , company and share data
     connection.reconnect()
-    profileData = Profile.SELECTALL(connection) # [{"PID" : pid , "discordID" : did}]
+    profileData = Profile.SELECTALL(connection) # [{"discordID" : did , "discordID" : did}]
     connection.reconnect()
-    companyData = Company.SELECTALL(connection) # [{"PID" : pid , "CID" : cid}]
+    companyData = Company.SELECTALL(connection) # [{"discordID" : did , "CID" : cid}]
     connection.reconnect()
-    shareData = Share.SELECTALL(connection)     # [{"PID" : pid , "CID" : cid , "percent" : perc}]
+    shareData = Share.SELECTALL(connection)     # [{"discordID" : did , "CID" : cid , "percent" : perc}]
     connection.reconnect() # these reconnects are rediculous
     
-    profiles = {} # PID : Profile[incomplete]
+    profiles = {} # discordID : Profile[incomplete]
     for pDat in profileData:
-        PID = pDat["PID"]
         DID = pDat["discordID"]
-        balHist = Profile.getBalanceHist(connection , PID)
+        balHist = Profile.getBalanceHist(connection , DID)
         connection.reconnect()
         hist = {}
         for dat in balHist:
             hist[dat["created"]] = dat["balance"]
-        profiles[PID] = Profile(hist , DID)
+        profiles[DID] = Profile(hist , DID)
         
     companies = {} #CID : Company
     for cDat in companyData:
-        PID = cDat["PID"]
+        DID = cDat["discordID"]
         CID = cDat["CID"]
-        owner = profiles[PID]
+        owner = profiles[DID]
         name = cDat["name"]
         worthHist = Company.getWorthHist(connection , CID)
         connection.reconnect()
@@ -332,10 +333,10 @@ def load(connection : Conn.MySQLConnection) -> dict:
         companies[CID] = company        
     
     for sDat in shareData:
-        PID = sDat["PID"]
+        DID = sDat["discordID"]
         CID = sDat["CID"]
         percent = sDat["percent"]
-        prof : Profile = profiles[PID]
+        prof : Profile = profiles[DID]
         comp : Company = companies[CID]
         shareObj = Share(comp , prof , percent)
         prof.shares.append(shareObj)
