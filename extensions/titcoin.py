@@ -1,3 +1,4 @@
+from mimetypes import init
 import time
 import discord , asyncio , math , random , datetime
 from discord.ext import commands , tasks
@@ -310,6 +311,9 @@ class TitCoin(commands.Cog):
     @commands.command()
     async def leaderboard(self , ctx : commands.Context):
         #get top 10 wealthiest people in tiddleton
+        class jankFix:
+            def __init__(self) -> None:
+                self.display_name = "[unkown user]"
         profs = sorted(profiles["profiles"].values() , key = lambda x : x.currentBal , reverse=True)[:10]
         maxBal = profs[0].currentBal
         digits = lambda x : math.floor(math.log10(x if x > 0 else x + 1)) + 1
@@ -318,6 +322,8 @@ class TitCoin(commands.Cog):
         board = ""
         for i , prof in enumerate(profs):
             user = ctx.guild.get_member(prof.discordID)
+            if user is None:
+                user = jankFix()
             board += f"[{i+1}{' ' * (lenDigits - digits(i+1))}] | [{prof.currentBal}{' ' * (maxBalDigits - digits(prof.currentBal))}] | {user.display_name}\n"
             
         embed = discord.Embed(title = "Top 10 Richest people in Tiddleton" , description = f"```{board}```")
