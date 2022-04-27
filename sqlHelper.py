@@ -1,3 +1,4 @@
+import math
 from typing import Tuple
 import mysql , os
 import mysql.connector
@@ -98,9 +99,11 @@ def blankHistory(balance = 0.0) -> dict[datetime.datetime : float]:
 
 class Profile:
     def __init__(self , balanceHist : dict[datetime.datetime : float] , discordID : int):
+        if len(balanceHist) == 0:
+            balanceHist = blankHistory()
         self.balanceHist = dict(sorted(balanceHist.items() , key = lambda x : x[0])) #newest to oldest
         self.discordID = discordID
-        self.currentBal = list(self.balanceHist.values())[0] 
+        self.currentBal = self.balanceHist[max(self.balanceHist.keys())]
         self.company = None
         self.shares = []
         
@@ -113,7 +116,23 @@ class Profile:
         title = f"Titcoin balance for [{user.display_name}]"
         desc = f"Your total Titcoin Balance is:\n`{self.currentBal}tc`\n{'**You are the wealthiest person in tiddleton**' if richest else ''}"
         colour = 0xFFD700 if richest else 0x000000
-        return discord.Embed(title = title , description = desc , colour = colour)
+        emb = discord.Embed(title = title , description = desc , colour = colour)
+        
+        #create worth history graph etc
+        sortedBalHist = sorted(self.balanceHist.items() , key = lambda x : x[0])[:10]
+        oldest = sortedBalHist[-1]
+        newest = sortedBalHist[0]
+        maxBal = max(sortedBalHist , key = lambda x : x[1])[1]
+        maxBal = maxBal if maxBal > 0 else 1
+        graph = ""
+        for date , bal in sortedBalHist:
+            graph += datetimeToStr(date) + " | "
+            multiplier = bal / maxBal
+            graph += ("#" * math.ceil(10*multiplier))
+            graph += "\n"
+        
+        emb.add_field(name=f"Worth history [{oldest[0].date()} to {newest[0].date()}]" , value=f"```{graph}```")
+        return emb
         
     def INSERT(self , connection : Conn.MySQLConnection):
         connection.reconnect()
@@ -133,6 +152,13 @@ class Profile:
             CID = s.company.getCID(connection , self.discordID)
             s.INSERT(connection , self.discordID , CID)
         
+    def __str__(self) -> str:
+        retStr = f"[{self.discordID}]\n"
+        for date , bal in self.balanceHist.items():
+            retStr += f"\t[{datetimeToStr(date)}] : [{bal}]\n"
+        retStr += f"\n\n{'='*10}\nCurrent balance : [{self.currentBal}]\n\n"
+        return retStr
+        
     @staticmethod
     def SELECTALL(connection : Conn.MySQLConnection) -> list[dict[str : int]]:
         #select from profiles all profiles
@@ -143,18 +169,22 @@ class Profile:
         #[(discordID)]
         returnList = []
         for did in result:
-            returnList.append({"discordID" : did})
+            returnList.append({"discordID" : did[0]})
         return returnList
     
     @staticmethod
     def getBalanceHist(connection : Conn.MySQLConnection , discordID) -> list[dict[str : int]]:
         rows = executeScript("scripts/getBalanceHistory.sql" , connection , discordID)
+        #print(f"discordID : {discordID}\trows len : {len(rows)}")
+        # validated, returns a lot of rows not just 2
         retList = []
+        '''
         if len(rows) == 0:
             #save was fucked so entries are blank, this is a jank fix
             blank = blankHistory()
             created , bal = list(blank.items())[0]
             rows.append((bal,created))
+        '''
         for r in rows:
             temp = {
                 "balance" : r[0],
@@ -332,9 +362,15 @@ def load(connection : Conn.MySQLConnection) -> dict:
         #print(f"bal hist : {balHist}")
         connection.reconnect()
         hist = {}
+        #print(f"[{DID}]")
+        #there was an issue here where DID was a 1 len tuple, man fuck tuples
         for dat in balHist:
             hist[dat["created"]] = dat["balance"]
+            #print(f"\t[{datetimeToStr(dat['created'])}] : [{dat['balance']}]")
+        #print()
         profiles[DID] = Profile(hist , DID)
+        if profiles[DID].currentBal > 0:
+            print(f"currentBal : {profiles[DID].currentBal}")
         
     companies = {} #CID : Company
     for cDat in companyData:

@@ -304,6 +304,8 @@ class TitCoin(commands.Cog):
         prof = profiles["profiles"][user.id]
         embed = prof.getEmbed(user , isrichest)
         await ctx.send(embed = embed)
+        print(prof)
+        
         
     @commands.command()
     async def leaderboard(self , ctx : commands.Context):
