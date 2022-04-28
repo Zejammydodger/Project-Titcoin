@@ -311,12 +311,28 @@ class Company:
         hist.insert(0 , (now , self.currentWorth))
         self.worthHist = dict(hist)
     
-    def createShare(self , profile : Profile , ammount : float) -> Share:
+    def createShare(self , profile : Profile , ammount : float):
+        #need to figure out how to readjust all share percentages
+        
+        # go through list of shares, figure out its current worth, then recalculate the percentage based on the companies total worth
+        shareData = {}
+        for s in self.shares:
+            s : Share
+            sWorth = self.currentWorth * s.percentage
+            shareData[sWorth] = s
+        
         self.currentWorth += ammount
         percent = ammount / self.currentWorth
         self.updateWorthHist()
-        return Share(self , profile , percent)
-    
+        s = Share(self , profile , percent)
+        self.shares.append(s)
+        profile.shares.append(s)
+        
+        for worth , share in shareData.items():
+            percent = worth / self.currentWorth
+            share.percentage = percent
+        
+        
     def sellShare(self , share : Share):
         share.sell() # the reason its done this way is so the share can remove itself from the profile 
         
@@ -324,12 +340,15 @@ class Company:
 def save(connection : Conn.MySQLConnection , database : dict):
     #goes through all of the profiles and calls the INSERT method on each
     #{
-    #"profiles" : {
-    #    discordID : Profile
-    #},
-    #"companies" : [
-    #    Company   
-    #]
+    #   "profiles" : 
+    #               {
+    #                   discordID : Profile
+    #               }
+    #   ,
+    #   "companies" : 
+    #               [ 
+    #                   Company 
+    #               ]
     #}
     #we only care about profiles here
     profiles : dict[int : Profile] = database["profiles"]

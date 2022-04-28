@@ -1,8 +1,7 @@
-from mimetypes import init
 import time
 import discord , asyncio , math , random , datetime
 from discord.ext import commands , tasks
-from titcoinHelpers import NoVoice , Denied
+from titcoinHelpers import NoVoice , Denied , HasCompany
 from sqlHelper import Profile , Company , Share , load , save , initDataBase , blankHistory
 
 #the actual titcoin functionality
@@ -131,6 +130,67 @@ class Perc(commands.Cog):
         embed.add_field(name = self.__class__.__name__ , value=f"```Description:\n\t{self.description}\n\nPrice:\n\tbase : [{self.basePrice}tc]\n\tcurrent : [{self.currentPrice}tc]\n\nUse:\n\t{commands}```")
 
         
+class StartCompany(Perc):
+    def __init__(self, bot: commands.Bot, basePrice=500):
+        super().__init__(bot, basePrice)
+        self.description = "Start your own company!"
+        
+    @staticmethod
+    def hasNoCompany():
+        async def check(ctx):
+            P = profiles["profiles"][ctx.author.id]
+            if P.company is not None:
+                return True
+            else:
+                raise HasCompany()
+        return commands.check(check)
+        
+    @commands.command()
+    @hasNoCompany()
+    async def startCompany(self , ctx : commands.Context):
+        #starts a dialoug sequence
+        #information needed:
+        # name
+        # how much extra if any they would like to invest in their own company
+        def checkFactory(auth : discord.Member , lambdaFunc = None):
+            if lambdaFunc is None:
+                lambdaFunc = lambda x : True
+            def check(message : discord.Message) -> bool:
+                return message.author == auth and lambdaFunc(message)
+            return check
+        
+        P : Profile = profiles["profiles"][ctx.author.id]
+        
+        emb = discord.Embed(title = "Company Name" , description = "what should the company be called")
+        await ctx.send(embed=emb)
+        while True:
+            message : discord.Message = await self.bot.wait_for("message" , check = checkFactory(ctx.author))
+            if message is not None:
+                break
+            else:
+                await ctx.send("you failed to respond in time, try again")
+        name = message.content
+        #weve got the name
+        
+        emb = discord.Embed(title = "Extra funds" , description = f"would you like to invest any extra tc into `{name}`?\n\njust respond with 0 if you dont, else respond with a number")
+        await ctx.send(embed = emb)
+        
+        while True:
+            message : discord.Message = await self.bot.wait_for("message" , check = checkFactory(ctx.author , lambda x : x.isdigit()))
+            if message is None:
+                await ctx.send("you failed to respond in time, try again")
+            else:
+                extra = float(message.content)
+                if extra > P.currentBal:
+                    await ctx.send(f"you do not posess the funds to do that, you have `{P.currentBal}`")
+                else:
+                    break
+        #weve got extra
+        Comp = Company(P , blankHistory() , [] , name)
+        Comp.createShare(P , self.currentPrice + extra)
+        
+    
+        
 class MuteFriendPerc(Perc):
     def __init__(self, bot: commands.Bot, basePrice=10):
         super().__init__(bot, basePrice)
@@ -248,7 +308,6 @@ class TitCoin(commands.Cog):
             
             await asyncio.sleep(60 * 60 * random.randint(1 , 3))
             
-
     @tasks.loop(minutes=1)
     async def VCcheck(self):
         #awards all users currently sat in a VC voiceVal*[number of people in that vc]tc per minute
@@ -277,9 +336,7 @@ class TitCoin(commands.Cog):
                 #print(f"profile added: {p}\n\t{p.discordID}\n\t{p.currentBal}\n")
         
         #self.bot.loop.create_task(self.randomAward()) #ill add this back at some point
-                
-        
-                
+                    
     @commands.Cog.listener()
     async def on_message(self , message : discord.Message):
         if message.author.id in cooldown:
@@ -306,8 +363,7 @@ class TitCoin(commands.Cog):
         embed = prof.getEmbed(user , isrichest)
         await ctx.send(embed = embed)
         print(prof)
-        
-        
+            
     @commands.command()
     async def leaderboard(self , ctx : commands.Context):
         #get top 10 wealthiest people in tiddleton

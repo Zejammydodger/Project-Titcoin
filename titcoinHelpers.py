@@ -26,6 +26,9 @@ class Denied(commands.CommandError):
     def __init__(self):
         super().__init__(message = "User denied the check")
 
+class HasCompany(commands.CommandError):
+    def __init__(self):
+        super().__init__(message = "You already own a company")
 
 def load() -> dict[int , Profile]:
     assert os.path.exists(DBmain) , f"[{DBmain}] file does not exsist"
