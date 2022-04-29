@@ -19,4 +19,7 @@ async def on_ready():
     await watcher.start()
     print("Ready")
     
-bot.run("OTU2MTU4NTM1ODU3NzM3NzU4.YjsKBw.-LH_b3H42TeqwcQzzfwn1N0cFVE")
+with open("secrets/token.txt" , "r") as F:
+    token = F.readline()
+    
+bot.run(token)

@@ -133,6 +133,7 @@ class Perc(commands.Cog):
 class StartCompany(Perc):
     def __init__(self, bot: commands.Bot, basePrice=500):
         super().__init__(bot, basePrice)
+        self.registerCommand(self.startCompany)
         self.description = "Start your own company!"
         
     @staticmethod
