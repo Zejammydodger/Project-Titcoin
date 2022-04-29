@@ -74,7 +74,7 @@ class Perc(commands.Cog):
             self.currentPrice -= (self.currentPrice * self.modifyVal)
     
     def hasFunds(self):
-        def memHasFundsCheck(ctx : commands.Context):
+        async def memHasFundsCheck(ctx : commands.Context):
             #stops the command based on weather the member has enough tc to use this command
             P = profiles["profiles"][ctx.author.id]
             return P.currentBal >= self.currentPrice
@@ -139,7 +139,8 @@ class StartCompany(Perc):
     def hasNoCompany():
         async def check(ctx):
             P = profiles["profiles"][ctx.author.id]
-            if P.company is not None:
+            print(P.company)
+            if P.company is None:
                 return True
             else:
                 raise HasCompany()

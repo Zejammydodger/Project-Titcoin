@@ -1,11 +1,2 @@
-json layout DONE [basic layout set out in main.json with a test user]
-json file loading / decrypting / dehashing, whatever i decide to go with for tamper protection havent done any tamper prot, cant be bothered lmao
-    - mostly done lol, just need to create a customized load and dump method DONE [for the main.json anyway]
-titcoin module so that it can be instantiated and added to the bots globals and used across extensions
-    - contains methods for getting a users "profile"
-    - updateing a users "profile"
-
-    "profile"
-        - discord user id DONE
-        - TC balance DONE
-        - win loss percentage for all gambleing float value for each
+todo:
+    redo todo
