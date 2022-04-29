@@ -178,13 +178,6 @@ class Profile:
         #print(f"discordID : {discordID}\trows len : {len(rows)}")
         # validated, returns a lot of rows not just 2
         retList = []
-        '''
-        if len(rows) == 0:
-            #save was fucked so entries are blank, this is a jank fix
-            blank = blankHistory()
-            created , bal = list(blank.items())[0]
-            rows.append((bal,created))
-        '''
         for r in rows:
             temp = {
                 "balance" : r[0],
@@ -192,16 +185,6 @@ class Profile:
             }
             retList.append(temp)
         return retList
-    """
-    dont need this anymore 
-    def getPID(self , connection : Conn.MySQLConnection):
-        cur = connection.cursor()
-        cur.execute("USE TitCoin; SELECT * FROM Profiles WHERE discordID = %s" , (self.discordID,))
-        print("heya")
-        PID , discordID = cur.fetchone()
-        #print(f"PID from getPID = {PID} where did = {self.discordID}")
-        return PID
-    """
         
     def updateBalanceHist(self):
         now = datetime.datetime.now()
@@ -256,14 +239,11 @@ class Share:
 class Company:
     def __init__(self , owner : Profile , worthHist : dict[datetime.datetime : float] , shares : list , name : str):
         self.owner = owner
+        self.owner.company = self
         self.worthHist = dict(sorted(worthHist.items() , key = lambda x : x[0]))#newest to oldest
         self.shares = shares
-        self.currentWorth = self.balanceHist.values()[0]
+        self.currentWorth = self.worthHist.values()[0]
         self.name = name
-        
-    def getCID(self , connection : Conn.MySQLConnection , discordID) -> int:
-        #this is probably gonna do way too many queries but ehhhh
-        pass
         
     def INSERT(self , connection : Conn.MySQLConnection , discordID , CID):
         #dont have to worry about shares or profile
@@ -277,7 +257,7 @@ class Company:
     def SELECTALL(connection : Conn.MySQLConnection) -> list[dict[str : int]]:
         #gets a list of all companies
         cur = connection.cursor()
-        cur.execute("USE TitCoin; SELECT * FROM Shares")
+        cur.execute("SELECT * FROM companies") # i dont know how i thought getting shit from shares was the way to do this lmao
         results = cur.fetchall() #(cid , pid)
         retList = []
         for cid , did , name in results:
@@ -332,9 +312,16 @@ class Company:
             percent = worth / self.currentWorth
             share.percentage = percent
         
-        
     def sellShare(self , share : Share):
         share.sell() # the reason its done this way is so the share can remove itself from the profile 
+        
+    def __str__(self):
+        #string method so i can print it and have it not look shit
+        retStr = f"{'='*5}[company]{'='*5}\nname : {self.name}\nowner : {self.owner.discordID}\nworth history :\n"
+        for date , worth in self.worthHist.items():
+            date = datetimeToStr(date)
+            retStr += f"\t[{date} | {worth}]\n"
+        return retStr + "\n"
         
         
 def save(connection : Conn.MySQLConnection , database : dict):

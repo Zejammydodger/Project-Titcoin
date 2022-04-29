@@ -186,8 +186,9 @@ class StartCompany(Perc):
                 else:
                     break
         #weve got extra
-        Comp = Company(P , blankHistory() , [] , name)
-        Comp.createShare(P , self.currentPrice + extra)
+        Comp = Company(P , blankHistory() , [] , name) # creates company and adds it to profile
+        Comp.createShare(P , self.currentPrice + extra) # creates share, recalculates and adds to profile
+        profiles["companies"].append(Comp) #add comp to database
         
     
         
@@ -484,3 +485,4 @@ def setup(bot):
     ChangeNick(bot)
     AdminZoo(bot)
     serverMute(bot)
+    StartCompany(bot)
