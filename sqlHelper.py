@@ -26,21 +26,7 @@ same with the owner of a company
 the company part of profile should also be a reference
 
 database structure:
-
-Profile table
-PID [primary key][autoIncr] | discordID [NN]
-
-Company table
-CID [primary key][autoIncr] | PID [foreign key][ref PID]
-
-Share table
-PID [foreign key][ref PID] | CID [foreign key][ref CID] | ammount [NN]
-
-Balance history table
-PID [foreign key][ref PID] | balance [NN] | created [NN][date time]
-
-Worth history table
-CID [Foreign key][ref CID] | created [NN][date time] | worth [NN]
+ refer to scripts/setup.sql 
 
 """
 
