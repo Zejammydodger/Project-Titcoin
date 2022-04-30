@@ -4,6 +4,7 @@ from discord.ext import commands , tasks
 from titcoinHelpers import NoVoice , Denied , HasCompany
 from sqlHelper import Profile , Company , Share , load , save , initDataBase , blankHistory
 import datetime
+import traceback
 
 #the actual titcoin functionality
 
@@ -116,7 +117,8 @@ class Perc(commands.Cog):
         elif isinstance(error , Denied):
             await ctx.send(embed = discord.Embed(title = "bruh -_-" , description = "you denied the check"))
         else:
-            await ctx.send(f"oop there was an error, ping neo\n\n{error}")
+            await ctx.send(f"oop there was an error, ping neo\n\n```{error}```")
+            traceback.print_exc()
         
     def registerCommand(self , command : commands.Command):
         command.after_invoke(self.modifyPrice)
@@ -179,7 +181,7 @@ class StartCompany(Perc):
         await ctx.send(embed = emb)
         
         while True:
-            message : discord.Message = await self.bot.wait_for("message" , check = checkFactory(ctx.author , lambda x : str(x).isdigit()))
+            message : discord.Message = await self.bot.wait_for("message" , check = checkFactory(ctx.author , lambda x : x.content.isdigit()))
             if message is None:
                 await ctx.send("you failed to respond in time, try again")
             else:
@@ -193,7 +195,6 @@ class StartCompany(Perc):
         Comp.createShare(P , self.currentPrice + extra) # creates share, recalculates and adds to profile
         profiles["companies"].append(Comp) #add comp to database
 
-        print(f"{Comp.name}, established in {datetime.datetime.year}")
         emb = discord.Embed(title=f"{Comp.name}, established in {datetime.datetime.year}", description=f"Founded by {Comp.owner}.\n{Comp.shares}")
         await ctx.send(embed=emb)
     
