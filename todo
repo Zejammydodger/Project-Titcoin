@@ -1,2 +1,15 @@
-todo:
-    redo todo
+buy stock command
+sell stock command
+sell partial stock command
+company profitability task
+
+optimise history saveing 
+    the reason it is so slow is becuase it is executeing a script for every history element, when we could be doing a "execute multi" on a list of params
+    makeing it like orders of maginitude faster
+
+add proper __str__ methods to all objects (with some kind of consistency)
+
+- optional but cool
+work on a helper class to create tables useing the funky "════╤══" kind of characters
+    here are all of the required characters btw:
+    ╔ ═ ╤ ║ │ ╪ ╗ ╣ ╝ ╚ ─ ┼
