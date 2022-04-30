@@ -3,6 +3,8 @@ import discord , asyncio , math , random , datetime
 from discord.ext import commands , tasks
 from titcoinHelpers import NoVoice , Denied , HasCompany
 from sqlHelper import Profile , Company , Share , load , save , initDataBase , blankHistory
+import datetime
+import traceback
 
 #the actual titcoin functionality
 
@@ -11,7 +13,7 @@ cooldownTime = 60
 
 connection = initDataBase()
 
-profiles : dict[str : dict | list] = load(connection) 
+profiles : dict[str : dict | list] = load(connection)
     #{"profiles" : { discordID : Profile } , "companies" : [Company]}
 #print(profiles)
 percs = []
@@ -115,7 +117,8 @@ class Perc(commands.Cog):
         elif isinstance(error , Denied):
             await ctx.send(embed = discord.Embed(title = "bruh -_-" , description = "you denied the check"))
         else:
-            await ctx.send(f"oop there was an error, ping neo\n\n{error}")
+            await ctx.send(f"oop there was an error, ping neo\n\n```{error}```")
+            traceback.print_exc()
         
     def registerCommand(self , command : commands.Command):
         command.after_invoke(self.modifyPrice)
@@ -178,7 +181,7 @@ class StartCompany(Perc):
         await ctx.send(embed = emb)
         
         while True:
-            message : discord.Message = await self.bot.wait_for("message" , check = checkFactory(ctx.author , lambda x : x.isdigit()))
+            message : discord.Message = await self.bot.wait_for("message" , check = checkFactory(ctx.author , lambda x : x.content.isdigit()))
             if message is None:
                 await ctx.send("you failed to respond in time, try again")
             else:
@@ -191,7 +194,9 @@ class StartCompany(Perc):
         Comp = Company(P , blankHistory() , [] , name) # creates company and adds it to profile
         Comp.createShare(P , self.currentPrice + extra) # creates share, recalculates and adds to profile
         profiles["companies"].append(Comp) #add comp to database
-        
+
+        emb = discord.Embed(title=f"{Comp.name}, established in {datetime.datetime.year}", description=f"Founded by {Comp.owner}.\n{Comp.shares}")
+        await ctx.send(embed=emb)
     
         
 class MuteFriendPerc(Perc):
@@ -330,6 +335,8 @@ class TitCoin(commands.Cog):
         print("flag")
          # tiddleton
         self.tiddleton = self.bot.get_guild(693537199500689439)
+        if self.tiddleton is None:                  # it took me an embarrassing amount of time to realize the bot looks for tiddleton specifically. Anyways this is my test server
+            self.tiddleton = self.bot.get_guild(969731141890363402)
         assert self.tiddleton is not None , "Bot not in tiddleton"
         for mem in self.tiddleton.members:
             if mem.id not in profiles["profiles"].keys():
