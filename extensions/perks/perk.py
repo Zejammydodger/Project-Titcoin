@@ -16,7 +16,7 @@ import traceback
 class Perk(commands.Cog):
     def __init__(self, bot: commands.Bot, titcoin: titcoin.TitCoin, basePrice=10):
         super().__init__()
-        self.description = "N/A"            # implement a description for your perc
+        self.description = "N/A"            # implement a description for your perk
         self.basePrice: int = basePrice
         self.currentPrice = basePrice
         self.modifyVal = 0.1
@@ -29,7 +29,7 @@ class Perk(commands.Cog):
 
     @tasks.loop(hours=1)
     async def deflate(self):
-        # reduces the current price down to baseprice
+        # reduces the current price down to base price
         if math.floor(self.currentPrice - (self.currentPrice * self.modifyVal)) <= self.basePrice:
             self.currentPrice = self.basePrice
         else:

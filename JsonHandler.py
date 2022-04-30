@@ -56,7 +56,7 @@ class Profile(DataClass):
 class JSONHandler:
     #implements a load and dump function
     def __init__(self , path : str) -> None:
-        assert os.path.exists(path) , f"[{path}] does not exsist"
+        assert os.path.exists(path) , f"[{path}] does not exist"
         assert path.endswith(".json") , "path must point to a json file"
         self.path = path
         

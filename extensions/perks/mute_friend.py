@@ -8,7 +8,7 @@ from extensions import titcoin      # be careful with this one, there's a big ri
 from extensions.perks.perk import Perk
 
 
-class MuteFriendPerc(Perk):
+class MuteFriendPerk(Perk):
     def __init__(self, bot: commands.Bot, basePrice=10):
         super().__init__(bot, basePrice)
         self.registerCommand(self.muteFriend)

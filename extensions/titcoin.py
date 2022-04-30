@@ -24,7 +24,7 @@ channelExclusions = [
     732621533729521717, # feminism
     716135506710233119, # politics
     715386476342411318, # rules
-    705213814462742558, # announcments
+    705213814462742558, # announcements
     776862596687069274, # staff list
     741048386928771244, # roles
     906531291791523920, # new roles
@@ -64,7 +64,7 @@ class TitCoin(commands.Cog):
     async def randomAward(self):
         
         while True:
-            # place a reward for 25tc in a channel that hasnt been used for at least 5 minutes every 1 - 3 hours
+            # place a reward for 25tc in a channel that hasn't been used for at least 5 minutes every 1 - 3 hours
             possibleChannels = []
             for chan in self.tiddleton.text_channels:
                 chan : discord.TextChannel
@@ -160,7 +160,7 @@ class TitCoin(commands.Cog):
         #get top 10 wealthiest people in tiddleton
         class jankFix:
             def __init__(self) -> None:
-                self.display_name = "[unkown user]"
+                self.display_name = "[unknown user]"
         profs = sorted(self.profiles["profiles"].values() , key = lambda x : x.currentBal , reverse=True)[:10]
         maxBal = profs[0].currentBal
         digits = lambda x : math.floor(math.log10(x if x > 0 else x + 1)) + 1
@@ -250,8 +250,8 @@ class TitCoin(commands.Cog):
         board = ""
         for i , prof in enumerate(profs):
             user : discord.Member = ctx.guild.get_member(prof.discordID)
-            perc = math.ceil(prof.currentBal / maxBal * granularity)
-            board += f"[{'#' * perc}{' ' * (granularity - perc)}] - {user.display_name}\n"
+            perk = math.ceil(prof.currentBal / maxBal * granularity)
+            board += f"[{'#' * perk}{' ' * (granularity - perk)}] - {user.display_name}\n"
             
         await ctx.send(embed = discord.Embed(title = f"distribution of wealth in tiddleton" , description = f"```{board}```"))
 
@@ -279,7 +279,7 @@ def setup(bot):
     bot.add_cog(tc)
 
     # load the perks in
-    mute_friend.MuteFriendPerc(bot, tc)
+    mute_friend.MuteFriendPerk(bot, tc)
     change_nick.ChangeNick(bot, tc)
     admin_zoo.AdminZoo(bot, tc)
     server_mute.ServerMute(bot, tc)

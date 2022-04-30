@@ -7,7 +7,7 @@ import datetime
 import discord
 
 
-#NOTE need a way to delete oldest record of balance and worth by PID and CID respectivily
+#NOTE need a way to delete oldest record of balance and worth by PID and CID respectively
 
 """
 The idea with this helper is that it will have a save and load function that take in / output this data structure
@@ -42,7 +42,7 @@ def executeScript(pathToScript : str , connection : Conn.MySQLConnection , *args
     #executes a script
     connection.reconnect()
     cursor : Conn.MySQLCursor = connection.cursor()
-    assert os.path.exists(pathToScript) , f"[{pathToScript}] does not exsist"
+    assert os.path.exists(pathToScript) , f"[{pathToScript}] does not exist"
     with open(pathToScript , "r") as F:
         statement = " ".join(F.readlines())
     newArgs = []
@@ -193,7 +193,7 @@ class Share:
         self.ID = sid
     
     def INSERT(self , connection : Conn.MySQLConnection , discordID , CID):
-        #no need to worry about inserting company, thats done from profile
+        #no need to worry about inserting company, that's done from profile
         executeScript("scripts/insertShare.sql" , connection , (discordID , CID , self.percentage , self.ID))
     
     @staticmethod
@@ -201,13 +201,13 @@ class Share:
         #get all shares
         cur = connection.cursor()
         cur.execute("SELECT * FROM Shares")
-        results = cur.fetchall() #(pid , cid , perc)
+        results = cur.fetchall() #(pid , cid , perk)
         retList = []
-        for did , cid , perc in results:
+        for did , cid , perk in results:
             temp = {
                 "discordID" : did,
                 "CID" : cid,
-                "percent" : perc
+                "percent" : perk
             }
             retList.append(temp)
         return retList
@@ -277,7 +277,7 @@ class Company:
         hist.insert(0 , (now , self.currentWorth))
         self.worthHist = dict(hist)
     
-    def createShare(self , profile : Profile , ammount : float):
+    def createShare(self, profile : Profile, amount : float):
         #need to figure out how to readjust all share percentages
         
         # go through list of shares, figure out its current worth, then recalculate the percentage based on the companies total worth
@@ -287,8 +287,8 @@ class Company:
             sWorth = self.currentWorth * s.percentage
             shareData[sWorth] = s
         
-        self.currentWorth += ammount
-        percent = ammount / self.currentWorth
+        self.currentWorth += amount
+        percent = amount / self.currentWorth
         self.updateWorthHist()
         s = Share(self , profile , percent)
         self.shares.append(s)
@@ -325,7 +325,7 @@ def save(connection : Conn.MySQLConnection , database : dict):
     #}
     #we only care about profiles here
     profiles : dict[int : Profile] = database["profiles"]
-    print("Saveing ...")
+    print("Saving ...")
     for discordID , P in profiles.items():
         P : Profile
         P.INSERT(connection) #and that should do it?
@@ -335,15 +335,15 @@ def save(connection : Conn.MySQLConnection , database : dict):
 
 def load(connection : Conn.MySQLConnection) -> dict:
     print("loading...")
-    #loads all data in then contructs all of the required objects makeing sure to reference where possible
+    #loads all data in then constructs all of the required objects making sure to reference where possible
     #start by selecting all Profile , company and share data
     connection.reconnect()
     profileData = Profile.SELECTALL(connection) # [{"discordID" : did , "discordID" : did}]
     connection.reconnect()
     companyData = Company.SELECTALL(connection) # [{"discordID" : did , "CID" : cid}]
     connection.reconnect()
-    shareData = Share.SELECTALL(connection)     # [{"discordID" : did , "CID" : cid , "percent" : perc}]
-    connection.reconnect() # these reconnects are rediculous
+    shareData = Share.SELECTALL(connection)     # [{"discordID" : did , "CID" : cid , "percent" : perk}]
+    connection.reconnect() # these reconnects are ridiculous
     
     print(f"profileData : {len(profileData)}\ncompanyData : {len(companyData)}\nshareData : {len(shareData)}")
     

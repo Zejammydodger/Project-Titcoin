@@ -33,7 +33,7 @@ class StartCompany(Perk):
     @commands.command()
     @hasNoCompany()
     async def startCompany(self, ctx: commands.Context):
-        # starts a dialoug sequence
+        # starts a dialog sequence
         # information needed:
         # name
         # how much extra if any they would like to invest in their own company
@@ -57,7 +57,7 @@ class StartCompany(Perk):
             else:
                 await ctx.send("you failed to respond in time, try again")
         name = message.content
-        # weve got the name
+        # we've got the name
 
         emb = discord.Embed(title="Extra funds",
                             description=f"would you like to invest any extra tc into `{name}`?\n\njust respond with 0 if you dont, else respond with a number")
@@ -71,10 +71,10 @@ class StartCompany(Perk):
             else:
                 extra = float(message.content)
                 if extra > P.currentBal:
-                    await ctx.send(f"you do not posess the funds to do that, you have `{P.currentBal}`")
+                    await ctx.send(f"you do not possess the funds to do that, you have `{P.currentBal}`")
                 else:
                     break
-        # weve got extra
+        # we've got extra
         Comp = Company(P, blankHistory(), [], name)  # creates company and adds it to profile
         Comp.createShare(P, self.currentPrice + extra)  # creates share, recalculates and adds to profile
         self.titcoin.profiles["companies"].append(Comp)  # add comp to database

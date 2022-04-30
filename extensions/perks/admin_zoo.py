@@ -20,7 +20,7 @@ class AdminZoo(Perk):
         overWrite = discord.PermissionOverwrite()
         overWrite.send_messages = True
         await aZoo.set_permissions(ctx.author , overwrite = overWrite)
-        await ctx.send("youre in go go go go")
+        await ctx.send("you're in go go go go")
         await asyncio.sleep(60)
         overWrite.send_messages = False
         await aZoo.set_permissions(ctx.author , overwrite = overWrite)

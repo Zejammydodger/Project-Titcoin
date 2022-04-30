@@ -31,7 +31,7 @@ class HasCompany(commands.CommandError):
         super().__init__(message = "You already own a company")
 
 def load() -> dict[int , Profile]:
-    assert os.path.exists(DBmain) , f"[{DBmain}] file does not exsist"
+    assert os.path.exists(DBmain) , f"[{DBmain}] file does not exist"
     with open(DBmain , "r") as F:
         data = json.load(F)
     data = data["profiles"]
@@ -49,7 +49,7 @@ def save(profiles : dict[int , Profile]):
 
 def recordTrade(user1id : int , user2id : int , trade : str):
     # records a trade in trades.txt
-    assert os.path.exists(DBtrades) , f"[{DBtrades}] does not exsist"
+    assert os.path.exists(DBtrades) , f"[{DBtrades}] does not exist"
     with open(DBtrades , "r") as F:
         data = json.load(F)
 

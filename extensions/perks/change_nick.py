@@ -11,7 +11,7 @@ from extensions.perks.perk import Perk
 class ChangeNick(Perk):
     def __init__(self, bot: commands.Bot, titcoin: titcoin.TitCoin, basePrice=15):
         super().__init__(bot, titcoin, basePrice)
-        self.description = "Change someones nickname for 10 minutes, the change will revert"
+        self.description = "Change someone's nickname for 10 minutes, the change will revert"
         self.registerCommand(self.changeNick)
 
     @commands.command()
