@@ -12,7 +12,7 @@ class MuteFriendPerk(Perk):
     def __init__(self, bot: commands.Bot, basePrice=10):
         super().__init__(bot, basePrice)
         self.registerCommand(self.muteFriend)
-        self.description = "Mute your freind in a VC for a minute"
+        self.description = "Mute your friend in a VC for a minute"
 
     @staticmethod
     def voiceConnected():
@@ -28,7 +28,7 @@ class MuteFriendPerk(Perk):
     @commands.command()
     @voiceConnected()
     async def muteFriend(self, ctx: commands.Context, friend: discord.Member):
-        assert friend.voice is not None, "The freind is not in a voice channel doofus"
+        assert friend.voice is not None, "The friend is not in a voice channel doofus"
         await friend.edit(mute=True)
         await asyncio.sleep(60)
         await friend.edit(mute=False)

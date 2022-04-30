@@ -64,8 +64,7 @@ class StartCompany(Perk):
         await ctx.send(embed=emb)
 
         while True:
-            message: discord.Message = await self.bot.wait_for("message", check=checkFactory(ctx.author, lambda
-                x: x.content.isdigit()))
+            message: discord.Message = await self.bot.wait_for("message", check=checkFactory(ctx.author, lambda x: x.content.isdigit()))
             if message is None:
                 await ctx.send("you failed to respond in time, try again")
             else:

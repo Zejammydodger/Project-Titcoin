@@ -15,13 +15,13 @@ class AdminZoo(Perk):
         self.registerCommand(self.letMeIn)
 
     @commands.command()
-    async def letMeIn(self, ctx : commands.Context):
+    async def letMeIn(self, ctx: commands.Context):
         aZoo = ctx.guild.get_channel(954805755624697916)
         overWrite = discord.PermissionOverwrite()
         overWrite.send_messages = True
-        await aZoo.set_permissions(ctx.author , overwrite = overWrite)
+        await aZoo.set_permissions(ctx.author, overwrite=overWrite)
         await ctx.send("you're in go go go go")
         await asyncio.sleep(60)
         overWrite.send_messages = False
-        await aZoo.set_permissions(ctx.author , overwrite = overWrite)
+        await aZoo.set_permissions(ctx.author, overwrite=overWrite)
         await ctx.send("times up")
