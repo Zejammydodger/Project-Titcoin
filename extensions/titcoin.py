@@ -1,3 +1,4 @@
+from __future__ import annotations
 import time
 import discord , asyncio , math , random , datetime
 from discord.ext import commands , tasks
@@ -6,13 +7,15 @@ from sqlHelper import Profile , Company , Share , load , save , initDataBase , b
 import datetime
 import traceback
 import util
+from extensions.perks.perk import Perk
+
+
 
 # the actual titcoin functionality
 
 
 # {"profiles" : { discordID : Profile } , "companies" : [Company]}
 # print(profiles)
-tiddleton : discord.Guild = None
 
 channelExclusions = [
     762305909497659483, # impastas tradition
@@ -131,7 +134,7 @@ class TitCoin(commands.Cog):
             # if the user is on cooldown, pass
             return
         else:
-            asyncio.create_task(util.cooldownFunc(message.author.id, self.cooldown))
+            asyncio.create_task(util.cooldownFunc(message.author.id, self.cooldownTime, self.cooldown))
             try:
                 self.profiles["profiles"][message.author.id].addBal(messageVal)
             except KeyError:
@@ -255,8 +258,8 @@ class TitCoin(commands.Cog):
     @commands.command()
     async def shop(self , ctx : commands.Context):
         embed = discord.Embed(title = "Shop")
-        for perk in percs:
-            perk : Perc
+        for perk in self.perks:
+            perk : Perk
             perk.extendEmbed(embed)
         await ctx.send(embed = embed)
             
@@ -265,11 +268,19 @@ class TitCoin(commands.Cog):
         print("unloading...")
         save(self.connection , self.profiles)
         return super().cog_unload()
-    
+
+
+# importing the perks
+from extensions.perks import admin_zoo, change_nick, mute_friend, server_mute, start_company
+
+
 def setup(bot):
-    bot.add_cog(TitCoin(bot))
-    MuteFriendPerc(bot)
-    ChangeNick(bot)
-    AdminZoo(bot)
-    serverMute(bot)
-    StartCompany(bot)
+    tc = TitCoin(bot)
+    bot.add_cog(tc)
+
+    # load the perks in
+    bot.add_cog(mute_friend.MuteFriendPerc(bot, tc))
+    bot.add_cog(change_nick.ChangeNick(bot, tc))
+    bot.add_cog(admin_zoo.AdminZoo(bot, tc))
+    bot.add_cog(server_mute.ServerMute(bot, tc))
+    bot.add_cog(start_company.StartCompany(bot, tc))

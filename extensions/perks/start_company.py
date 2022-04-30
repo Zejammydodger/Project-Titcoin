@@ -1,15 +1,26 @@
+import datetime
+import discord
+from discord.ext import commands
+from titcoinHelpers import NoVoice, Denied, HasCompany
+from sqlHelper import Profile, Company, Share, load, save, initDataBase, blankHistory
+from extensions import titcoin      # be careful with this one, there's a big risk of circular import errors
+from extensions.perks.perk import Perk
+
+titcoin_cog: titcoin.TitCoin
 
 
-class StartCompany(Perc):
-    def __init__(self, bot: commands.Bot, basePrice=500):
-        super().__init__(bot, basePrice)
+class StartCompany(Perk):
+    def __init__(self, bot: commands.Bot, titcoin: titcoin.TitCoin, basePrice=500):
+        super().__init__(bot, titcoin, basePrice)
         self.registerCommand(self.startCompany)
         self.description = "Start your own company!"
+        global titcoin_cog    # best I could do, don't judge me
+        titcoin_cog = self.titcoin
 
     @staticmethod
     def hasNoCompany():
-        async def check(ctx):
-            P = profiles["profiles"][ctx.author.id]
+        async def check(ctx: commands.Context):
+            P = titcoin_cog.profiles["profiles"][ctx.author.id]
             print(P.company)
             if P.company is None:
                 return True
@@ -34,7 +45,7 @@ class StartCompany(Perc):
 
             return check
 
-        P: Profile = profiles["profiles"][ctx.author.id]
+        P: Profile = self.titcoin.profiles["profiles"][ctx.author.id]
 
         emb = discord.Embed(title="Company Name", description="what should the company be called")
         await ctx.send(embed=emb)
@@ -65,7 +76,7 @@ class StartCompany(Perc):
         # weve got extra
         Comp = Company(P, blankHistory(), [], name)  # creates company and adds it to profile
         Comp.createShare(P, self.currentPrice + extra)  # creates share, recalculates and adds to profile
-        profiles["companies"].append(Comp)  # add comp to database
+        self.titcoin.profiles["companies"].append(Comp)  # add comp to database
 
         emb = discord.Embed(title=f"{Comp.name}, established in {datetime.datetime.year}",
                             description=f"Founded by {Comp.owner}.\n{Comp.shares}")

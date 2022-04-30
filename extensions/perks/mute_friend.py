@@ -1,6 +1,13 @@
+import asyncio
+import discord
+from discord.ext import commands, tasks
+from titcoinHelpers import NoVoice, Denied, HasCompany
+from sqlHelper import Profile, Company, Share, load, save, initDataBase, blankHistory
+from extensions import titcoin      # be careful with this one, there's a big risk of circular import errors
+from extensions.perks.perk import Perk
 
 
-class MuteFriendPerc(Perc):
+class MuteFriendPerc(Perk):
     def __init__(self, bot: commands.Bot, basePrice=10):
         super().__init__(bot, basePrice)
         self.registerCommand(self.muteFriend)

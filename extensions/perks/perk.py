@@ -67,7 +67,7 @@ class Perk(commands.Cog):
         # modifies the price of the command
         # god i hope this only goes off if the actual command is run ;-;
         self.currentPrice += self.currentPrice * 0.1
-        P = profiles["profiles"][ctx.author.id]
+        P = self.titcoin.profiles["profiles"][ctx.author.id]
         P.addBal(-self.currentPrice)
 
     async def checkFail(self, _, ctx, error):
