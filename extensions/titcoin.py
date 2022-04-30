@@ -5,37 +5,32 @@ from titcoinHelpers import NoVoice , Denied , HasCompany
 from sqlHelper import Profile , Company , Share , load , save , initDataBase , blankHistory
 import datetime
 import traceback
+import util
 
-#the actual titcoin functionality
+# the actual titcoin functionality
 
-cooldown : list[int] = [] # a list of userIDs that represents users on cooldown
-cooldownTime = 60
 
-connection = initDataBase()
-
-profiles : dict[str : dict | list] = load(connection)
-    #{"profiles" : { discordID : Profile } , "companies" : [Company]}
-#print(profiles)
-percs = []
+# {"profiles" : { discordID : Profile } , "companies" : [Company]}
+# print(profiles)
 tiddleton : discord.Guild = None
 
 channelExclusions = [
-    762305909497659483, #impastas tradition
-    731163650106065016, #poc pog
-    723333207398809730, #pride parade
-    732621533729521717, #feminism
-    716135506710233119, #politics
-    715386476342411318, #rules
-    705213814462742558, #announcments
-    776862596687069274, #staff list
-    741048386928771244, #roles
-    906531291791523920, #new roles
-    705222627509141594, #command list wip
-    811762377695035392, #suggestions
-    795667559693156352, #suggestions disc
-    838555163563786250, #stream announce
-    778335359225430026, #command list
-    953568041873047562, #beat saber announce
+    762305909497659483, # impastas tradition
+    731163650106065016, # poc pog
+    723333207398809730, # pride parade
+    732621533729521717, # feminism
+    716135506710233119, # politics
+    715386476342411318, # rules
+    705213814462742558, # announcments
+    776862596687069274, # staff list
+    741048386928771244, # roles
+    906531291791523920, # new roles
+    705222627509141594, # command list wip
+    811762377695035392, # suggestions
+    795667559693156352, # suggestions disc
+    838555163563786250, # stream announce
+    778335359225430026, # command list
+    953568041873047562, # beat saber announce
 ]
 
 ### titcoin values
@@ -45,228 +40,6 @@ voiceVal = 1
 
 ### titcoin values
 
-### cooldown async function
-
-async def cooldownFunc(userID : int):
-    cooldown.append(userID)
-    await asyncio.sleep(cooldownTime)
-    cooldown.pop(cooldown.index(userID))
-    
-### cooldown async function
-# Perc base class
-class Perc(commands.Cog):
-    def __init__(self , bot : commands.Bot , basePrice = 10):
-        super().__init__()
-        self.description = "N/A" # implement a description for your perc
-        self.basePrice : int = basePrice
-        self.currentPrice = basePrice
-        self.modifyVal = 0.1
-        self.bot = bot
-        self.commands : list[commands.Command] = []
-        percs.append(self)
-        bot.add_cog(self)
-        self.deflate.start()
-    
-    @tasks.loop(hours=1)
-    async def deflate(self):
-        #reduces the current price down to baseprice 
-        if math.floor(self.currentPrice - (self.currentPrice * self.modifyVal)) <= self.basePrice:
-            self.currentPrice = self.basePrice
-        else:
-            self.currentPrice -= (self.currentPrice * self.modifyVal)
-    
-    def hasFunds(self):
-        async def memHasFundsCheck(ctx : commands.Context):
-            #stops the command based on weather the member has enough tc to use this command
-            P = profiles["profiles"][ctx.author.id]
-            return P.currentBal >= self.currentPrice
-        return memHasFundsCheck
-    
-    def confirmed(self):
-        #prompts the user to confirm if they want to spend that much
-        yes = "✅"
-        no = "❌"
-        async def confirmCheck(ctx : commands.Context):
-            def sameAuth(reaction : discord.Reaction , user):
-                return ctx.author == user and str(reaction.emoji) in [yes , no] 
-            
-            msg : discord.Message = await ctx.send(embed = discord.Embed(title = "u sure homie?" , description = f"You are about to spend `[{round(self.currentPrice , 2)}tc]`"))
-            await msg.add_reaction(yes) #yes
-            await msg.add_reaction(no) #no
-            reaction , user = await self.bot.wait_for("reaction_add" , check = sameAuth)
-            if str(reaction.emoji) == yes:
-                return True
-            else:
-                raise Denied          
-        
-        return confirmCheck
-    
-    async def modifyPrice(self , _ , ctx : commands.Context):
-        # modifies the price of the command
-        # god i hope this only goes off if the actual command is run ;-;
-        self.currentPrice += self.currentPrice * 0.1
-        P = profiles["profiles"][ctx.author.id]
-        P.addBal(-self.currentPrice)
-    
-    async def checkFail(self , _ , ctx , error):
-        #print(f"_ : {_}  ctx : {ctx}   err : {error}")
-        if isinstance(error , commands.errors.CheckFailure):
-            await ctx.send(embed = discord.Embed(title = "no titcoin?" , description = f"You lack the funds to do this, the current price sits at : `{self.currentPrice}tc`"))
-        elif isinstance(error , NoVoice):
-            await ctx.send(embed = discord.Embed(title = "smh" , description = "you need to be in a voice channel to use this"))
-        elif isinstance(error , Denied):
-            await ctx.send(embed = discord.Embed(title = "bruh -_-" , description = "you denied the check"))
-        else:
-            await ctx.send(f"oop there was an error, ping neo\n\n```{error}```")
-            traceback.print_exc()
-        
-    def registerCommand(self , command : commands.Command):
-        command.after_invoke(self.modifyPrice)
-        command.error(self.checkFail)
-        command.add_check(self.hasFunds())
-        command.add_check(self.confirmed())
-        self.commands.append(command)
-    
-    def extendEmbed(self , embed : discord.Embed):
-        commandNames = [f"${c.name}" for c in self.commands]
-        commands = "\n\t".join(commandNames)
-        embed.add_field(name = self.__class__.__name__ , value=f"```Description:\n\t{self.description}\n\nPrice:\n\tbase : [{self.basePrice}tc]\n\tcurrent : [{self.currentPrice}tc]\n\nUse:\n\t{commands}```")
-
-        
-class StartCompany(Perc):
-    def __init__(self, bot: commands.Bot, basePrice=500):
-        super().__init__(bot, basePrice)
-        self.registerCommand(self.startCompany)
-        self.description = "Start your own company!"
-        
-    @staticmethod
-    def hasNoCompany():
-        async def check(ctx):
-            P = profiles["profiles"][ctx.author.id]
-            print(P.company)
-            if P.company is None:
-                return True
-            else:
-                raise HasCompany()
-        return commands.check(check)
-        
-    @commands.command()
-    @hasNoCompany()
-    async def startCompany(self , ctx : commands.Context):
-        #starts a dialoug sequence
-        #information needed:
-        # name
-        # how much extra if any they would like to invest in their own company
-        def checkFactory(auth : discord.Member , lambdaFunc = None):
-            if lambdaFunc is None:
-                lambdaFunc = lambda x : True
-            def check(message : discord.Message) -> bool:
-                return message.author == auth and lambdaFunc(message)
-            return check
-        
-        P : Profile = profiles["profiles"][ctx.author.id]
-        
-        emb = discord.Embed(title = "Company Name" , description = "what should the company be called")
-        await ctx.send(embed=emb)
-        while True:
-            message : discord.Message = await self.bot.wait_for("message" , check = checkFactory(ctx.author))
-            if message is not None:
-                break
-            else:
-                await ctx.send("you failed to respond in time, try again")
-        name = message.content
-        #weve got the name
-        
-        emb = discord.Embed(title = "Extra funds" , description = f"would you like to invest any extra tc into `{name}`?\n\njust respond with 0 if you dont, else respond with a number")
-        await ctx.send(embed = emb)
-        
-        while True:
-            message : discord.Message = await self.bot.wait_for("message" , check = checkFactory(ctx.author , lambda x : x.content.isdigit()))
-            if message is None:
-                await ctx.send("you failed to respond in time, try again")
-            else:
-                extra = float(message.content)
-                if extra > P.currentBal:
-                    await ctx.send(f"you do not posess the funds to do that, you have `{P.currentBal}`")
-                else:
-                    break
-        #weve got extra
-        Comp = Company(P , blankHistory() , [] , name) # creates company and adds it to profile
-        Comp.createShare(P , self.currentPrice + extra) # creates share, recalculates and adds to profile
-        profiles["companies"].append(Comp) #add comp to database
-
-        emb = discord.Embed(title=f"{Comp.name}, established in {datetime.datetime.year}", description=f"Founded by {Comp.owner}.\n{Comp.shares}")
-        await ctx.send(embed=emb)
-    
-        
-class MuteFriendPerc(Perc):
-    def __init__(self, bot: commands.Bot, basePrice=10):
-        super().__init__(bot, basePrice)
-        self.registerCommand(self.muteFriend)
-        self.description = "Mute your freind in a VC for a minute"
-
-    @staticmethod
-    def voiceConnected():
-        async def check(ctx):
-            #ctx.cog to get self
-            if ctx.author.voice is None:
-                raise NoVoice()
-            else:
-                return True    
-        return commands.check(check)
-    
-    @commands.command()
-    @voiceConnected()
-    async def muteFriend(self , ctx : commands.Context , friend : discord.Member):
-        assert friend.voice is not None , "The freind is not in a voice channel doofus"
-        await friend.edit(mute = True)
-        await asyncio.sleep(60)
-        await friend.edit(mute = False)
-
-class ChangeNick(Perc):
-    def __init__(self, bot: commands.Bot, basePrice=15):
-        super().__init__(bot, basePrice)
-        self.description = "Change someones nickname for 10 minutes, the change will revert"
-        self.registerCommand(self.changeNick)
-        
-    @commands.command()
-    async def changeNick(self , ctx : commands.Context , friend : discord.Member , nickname : str):
-        current = friend.nick
-        await friend.edit(nick = nickname)
-        await asyncio.sleep(60 * 10) # 10 minutes
-        await friend.edit(nick = current)
-
-class AdminZoo(Perc):
-    def __init__(self, bot: commands.Bot, basePrice=50):
-        super().__init__(bot, basePrice)
-        self.description = "allows you to talk in admin zoo for 3 minutes, make em count"
-        self.registerCommand(self.letMeIn)
-
-    @commands.command()
-    async def letMeIn(self, ctx : commands.Context):
-        aZoo = ctx.guild.get_channel(954805755624697916)
-        overWrite = discord.PermissionOverwrite()
-        overWrite.send_messages = True
-        await aZoo.set_permissions(ctx.author , overwrite = overWrite)
-        await ctx.send("youre in go go go go")
-        await asyncio.sleep(60)
-        overWrite.send_messages = False
-        await aZoo.set_permissions(ctx.author , overwrite = overWrite)
-        await ctx.send("times up")
-
-class serverMute(Perc):
-    def __init__(self, bot: commands.Bot, basePrice=75):
-        super().__init__(bot, basePrice)
-        self.description = "server mute someone for 30 seconds"
-        self.registerCommand(self.mute)
-        self.muteRoleID = 799600022936223755
-        
-    @commands.command()
-    async def mute(self , ctx : commands.Context , friend : discord.Member):
-        muteRole = ctx.guild.get_role(self.muteRoleID)
-        await friend.add_roles(muteRole)
-        await asyncio.sleep(30)
-        await friend.remove_roles(muteRole)
 
 class TitCoin(commands.Cog):
     def __init__(self , bot) -> None:
@@ -274,11 +47,16 @@ class TitCoin(commands.Cog):
         self.bot : commands.Bot = bot
         print("Titcoin innit, profiles loaded")
         self.tiddleton : discord.Guild = None
-        tiddleton = self.tiddleton
         self.channelsOnCooldown : list[discord.TextChannel] = []
-        
-        #starting tasks
-        self.VCcheck.start()
+        self.perks = []
+
+        self.connection = initDataBase()
+        self.profiles: dict[str: dict | list] = load(self.connection)
+
+        self.cooldown: list[int] = []  # a list of userIDs that represents users on cooldown
+        self.cooldownTime = 60
+
+        self.VCcheck.start()    # starting tasks
 
     async def randomAward(self):
         
@@ -310,7 +88,7 @@ class TitCoin(commands.Cog):
             msg : discord.Message = await chosenChannel.send(embed = e)
             message : discord.Message = await self.bot.wait_for("message" , check = messageCheck)
             if message is not None:
-                P = profiles["profiles"][message.author.id]
+                P = self.profiles["profiles"][message.author.id]
                 P.addBal(ammount)
             await msg.delete(delay=5)
             
@@ -327,7 +105,7 @@ class TitCoin(commands.Cog):
             if numConnected > 0:
                 for mem in VC.members:
                     mem : discord.Member
-                    P = profiles["profiles"][mem.id]
+                    P = self.profiles["profiles"][mem.id]
                     P.addBal(voiceVal * numConnected) 
 
     @commands.Cog.listener()
@@ -339,9 +117,9 @@ class TitCoin(commands.Cog):
             self.tiddleton = self.bot.get_guild(969731141890363402)
         assert self.tiddleton is not None , "Bot not in tiddleton"
         for mem in self.tiddleton.members:
-            if mem.id not in profiles["profiles"].keys():
+            if mem.id not in self.profiles["profiles"].keys():
                 p = Profile(blankHistory() , mem.id)
-                profiles["profiles"][mem.id] = p
+                self.profiles["profiles"][mem.id] = p
                 
                 #print(f"profile added: {p}\n\t{p.discordID}\n\t{p.currentBal}\n")
         
@@ -349,17 +127,17 @@ class TitCoin(commands.Cog):
                     
     @commands.Cog.listener()
     async def on_message(self , message : discord.Message):
-        if message.author.id in cooldown:
+        if message.author.id in self.cooldown:
             # if the user is on cooldown, pass
             return
         else:
-            asyncio.create_task(cooldownFunc(message.author.id))
+            asyncio.create_task(util.cooldownFunc(message.author.id, self.cooldown))
             try:
-                profiles["profiles"][message.author.id].addBal(messageVal)
+                self.profiles["profiles"][message.author.id].addBal(messageVal)
             except KeyError:
                 print(f"[{message.author.id}]['{message.author.display_name}'] not found, adding to system")
                 P = Profile(blankHistory(balance = messageVal) , message.author.id)
-                profiles["profiles"][message.author.id] = P
+                self.profiles["profiles"][message.author.id] = P
                 
     @commands.command()
     async def titcoin(self , ctx : commands.Context , user : discord.Member = None):
@@ -367,9 +145,9 @@ class TitCoin(commands.Cog):
         #with some other funky stuff
         if user == None:
             user = ctx.author
-        richest : Profile = max(profiles["profiles"].values() , key = lambda x : x.currentBal)
+        richest : Profile = max(self.profiles["profiles"].values() , key = lambda x : x.currentBal)
         isrichest : bool = user.id == richest.discordID
-        prof = profiles["profiles"][user.id]
+        prof = self.profiles["profiles"][user.id]
         embed = prof.getEmbed(user , isrichest)
         await ctx.send(embed = embed)
         print(prof)
@@ -380,7 +158,7 @@ class TitCoin(commands.Cog):
         class jankFix:
             def __init__(self) -> None:
                 self.display_name = "[unkown user]"
-        profs = sorted(profiles["profiles"].values() , key = lambda x : x.currentBal , reverse=True)[:10]
+        profs = sorted(self.profiles["profiles"].values() , key = lambda x : x.currentBal , reverse=True)[:10]
         maxBal = profs[0].currentBal
         digits = lambda x : math.floor(math.log10(x if x > 0 else x + 1)) + 1
         lenDigits = digits(len(profs))
@@ -431,8 +209,8 @@ class TitCoin(commands.Cog):
         # 'globals'
         user1 : discord.Member = ctx.author
         dialog = lambda x : ctx.send(embed = discord.Embed(title = f"[{user1.display_name}] <-> [{user2.display_name}]" , description = x))
-        profile1 : Profile = profiles["profiles"][user1.id]
-        profile2 : Profile = profiles["profiles"][user2.id]
+        profile1 : Profile = self.profiles["profiles"][user1.id]
+        profile2 : Profile = self.profiles["profiles"][user2.id]
         
         
         await dialog("What are you selling?")
@@ -464,7 +242,7 @@ class TitCoin(commands.Cog):
     @commands.command()
     async def wealthDist(self , ctx : commands.Context, top : int = 20 , granularity : int = 10):
         # produces a leaderboard type thing but its a percentage distribution of wealth, ie #1 == 100% and #2 is some percentage of #1
-        profs = sorted(profiles["profiles"].values() , key = lambda x : x.currentBal , reverse=True)[:top]
+        profs = sorted(self.profiles["profiles"].values() , key = lambda x : x.currentBal , reverse=True)[:top]
         maxBal = profs[0].currentBal
         board = ""
         for i , prof in enumerate(profs):
@@ -477,15 +255,15 @@ class TitCoin(commands.Cog):
     @commands.command()
     async def shop(self , ctx : commands.Context):
         embed = discord.Embed(title = "Shop")
-        for perc in percs:
-            perc : Perc
-            perc.extendEmbed(embed)
+        for perk in percs:
+            perk : Perc
+            perk.extendEmbed(embed)
         await ctx.send(embed = embed)
             
     ### cog unload
     def cog_unload(self):
         print("unloading...")
-        save(connection , profiles)
+        save(self.connection , self.profiles)
         return super().cog_unload()
     
 def setup(bot):
