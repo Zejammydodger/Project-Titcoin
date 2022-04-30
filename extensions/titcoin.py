@@ -6,7 +6,7 @@ from titcoinHelpers import NoVoice , Denied , HasCompany
 from sqlHelper import Profile , Company , Share , load , save , initDataBase , blankHistory
 import datetime
 import traceback
-import util
+from extensions import util
 from extensions.perks.perk import Perk
 
 
@@ -279,8 +279,8 @@ def setup(bot):
     bot.add_cog(tc)
 
     # load the perks in
-    bot.add_cog(mute_friend.MuteFriendPerc(bot, tc))
-    bot.add_cog(change_nick.ChangeNick(bot, tc))
-    bot.add_cog(admin_zoo.AdminZoo(bot, tc))
-    bot.add_cog(server_mute.ServerMute(bot, tc))
-    bot.add_cog(start_company.StartCompany(bot, tc))
+    mute_friend.MuteFriendPerc(bot, tc)
+    change_nick.ChangeNick(bot, tc)
+    admin_zoo.AdminZoo(bot, tc)
+    server_mute.ServerMute(bot, tc)
+    start_company.StartCompany(bot, tc)

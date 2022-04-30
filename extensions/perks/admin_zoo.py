@@ -1,3 +1,4 @@
+from __future__ import annotations
 import asyncio
 import discord
 from discord.ext import commands, tasks
