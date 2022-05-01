@@ -53,8 +53,6 @@ class BaseColumn:
         
         if length > self.maxCharLen:
             self.maxCharLen = length
-        
-        print(f"maxlen of {self.name} is {self.maxCharLen}")
             
     def getThickLineSeg(self) -> str:
         #gets the header / footer string without joiners or like the edge bits
@@ -70,12 +68,24 @@ class BaseColumn:
         padStr = " " * self.pad
         #ahhh fuck i forgot about whitespace
         charLen = typesafeCharNum(data)
-        whiteSpace = self.maxCharLen - charLen
+        whiteSpace = self.maxCharLen - charLen - self.__padding
         
         return f"{padStr}{dataStr}{' ' * whiteSpace}{padStr}"
         
 class PercentOfColumn(BaseColumn):
-    pass
+    def __init__(self, name: str, maxValue, granularity=10, padding=1, floatRounding=1):
+        super().__init__(name, padding, floatRounding)
+        self.maxValue = maxValue
+        self.__granularity = granularity
+        
+    def addElement(self, row):
+        #special case, creates a [#####    ] 50% out of rows[index] and self.maxValue then adds padding
+        percFloat = row / self.maxValue
+        percInt = floor(percFloat * self.__granularity)
+        percNum = ceil(percFloat * 100)
+        percStr = f"[{'#' * percInt}{' ' * (self.__granularity - percInt)}] {percNum}%{' ' * (3 - numToCharLen(percNum))}"
+        return super().addElement(percStr)
+        
 
 class IndexColumn(BaseColumn):
     def __init__(self, padding = 1, startsAt = 0):
@@ -129,10 +139,10 @@ if __name__ == "__main__":
     index = IndexColumn()
     nameCol = BaseColumn("name")
     balance = BaseColumn("titcoin")
+    health = PercentOfColumn("health" , 1000)
     
-    table = Table([index , nameCol , balance])
+    table = Table([index , nameCol , balance , health])
     for i in range(10):
-        table.addRow(i , "a"*random.randint(1,6) , random.randint(60 , 10000))
+        table.addRow(i , "a"*random.randint(1,6) , random.randint(60 , 10000) , random.randint(0 , 1000))
     
-    #print(table.columns[0].rows)
     print(table)
