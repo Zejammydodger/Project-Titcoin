@@ -43,7 +43,6 @@ class TitCoin(commands.Cog):
     def __init__(self, bot) -> None:
         super().__init__()
         self.bot: commands.Bot = bot
-        print("Titcoin innit, profiles loaded")
         self.tiddleton: discord.Guild = None
         self.channelsOnCooldown: list[discord.TextChannel] = []
         self.perks = []
@@ -55,6 +54,7 @@ class TitCoin(commands.Cog):
         self.cooldownTime = 60
 
         self.VCcheck.start()    # starting tasks
+        print("Titcoin innit, profiles loaded")
 
     async def randomAward(self):
         
