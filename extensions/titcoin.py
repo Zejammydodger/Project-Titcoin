@@ -1,13 +1,9 @@
-from __future__ import annotations
-import time
 import discord, asyncio, math, random, datetime
 from discord.ext import commands, tasks
-from titcoinHelpers import NoVoice, Denied, HasCompany
 from sqlHelper import Profile, Company, Share, load, save, initDataBase, blankHistory
-import datetime
-import traceback
 from extensions import util
 from extensions.perks.perk import Perk
+from Table import Table , BaseColumn , IndexColumn , PercentOfColumn
 
 
 # the actual titcoin functionality
@@ -157,22 +153,17 @@ class TitCoin(commands.Cog):
     @commands.command()
     async def leaderboard(self, ctx: commands.Context):
         # get top 10 wealthiest people in tiddleton
-        class jankFix:
-            def __init__(self) -> None:
-                self.display_name = "[unknown user]"
         profs = sorted(self.profiles["profiles"].values(), key=lambda x: x.currentBal, reverse=True)[:10]
-        maxBal = profs[0].currentBal
-        digits = lambda x: math.floor(math.log10(x if x > 0 else x + 1)) + 1
-        lenDigits = digits(len(profs))
-        maxBalDigits = digits(maxBal)
-        board = ""
-        for i, prof in enumerate(profs):
-            user = ctx.guild.get_member(prof.discordID)
-            if user is None:
-                user = jankFix()
-            board += f"[{i+1}{' ' * (lenDigits - digits(i+1))}] | [{prof.currentBal}{' ' * (maxBalDigits - digits(prof.currentBal))}] | {user.display_name}\n"
-            
-        embed = discord.Embed(title="Top 10 Richest people in Tiddleton", description=f"```{board}```")
+        index = IndexColumn(startsAt=1)
+        name = BaseColumn("name")
+        bal = BaseColumn("Balance in tc")
+        table = Table([index , name , bal])
+        
+        for p in profs:
+            user = ctx.guild.get_member(p.discordID)
+            table.addRow(None , user.display_name if user is not None else "[unkown user]" , math.floor(p.currentBal))
+        
+        embed = discord.Embed(title="Top 10 Richest people in Tiddleton", description=f"```{str(table)}```")
         await ctx.send(embed=embed)
                 
     @commands.command()
@@ -241,17 +232,18 @@ class TitCoin(commands.Cog):
             await ctx.send(embed=discord.Embed(title="Trade declined", color=0xff0000))
         
     @commands.command()
-    async def wealthDist(self, ctx: commands.Context, top: int = 20, granularity: int = 10):
+    async def wealthDist(self, ctx: commands.Context, top: int = 15, granularity: int = 10):
         # produces a leaderboard type thing but its a percentage distribution of wealth, ie #1 == 100% and #2 is some percentage of #1
         profs = sorted(self.profiles["profiles"].values(), key=lambda x: x.currentBal, reverse=True)[:top]
         maxBal = profs[0].currentBal
-        board = ""
-        for i, prof in enumerate(profs):
+        index = IndexColumn(startsAt=1 , padding=0)
+        name = BaseColumn("Name" , padding=0)
+        percOfMax = PercentOfColumn("relative wealth to #1" , maxBal , granularity=granularity , padding=0)
+        table = Table([index , name , percOfMax])
+        for prof in profs:
             user: discord.Member = ctx.guild.get_member(prof.discordID)
-            perk = math.ceil(prof.currentBal / maxBal * granularity)
-            board += f"[{'#' * perk}{' ' * (granularity - perk)}] - {user.display_name}\n"
-            
-        await ctx.send(embed=discord.Embed(title=f"distribution of wealth in tiddleton", description=f"```{board}```"))
+            table.addRow(None , user.display_name if user is not None else "[unkown user]" , math.floor(prof.currentBal))
+        await ctx.send(embed=discord.Embed(title=f"distribution of wealth in tiddleton", description=f"```{str(table)}```"))
 
     @commands.command()
     async def shop(self, ctx: commands.Context):

@@ -142,7 +142,7 @@ if __name__ == "__main__":
     health = PercentOfColumn("health" , 1000)
     
     table = Table([index , nameCol , balance , health])
-    for i in range(10):
+    for i in range(100):
         table.addRow(i , "a"*random.randint(1,6) , random.randint(60 , 10000) , random.randint(0 , 1000))
     
     print(table)
