@@ -16,6 +16,7 @@ CREATE TABLE IF NOT EXISTS BalanceHistory(
     PID BIGINT,
     FOREIGN KEY(PID) REFERENCES Profiles(discordID),
     balance FLOAT NOT NULL,
+    tag TEXT,
     timestamp DATETIME NOT NULL
 );
 
@@ -35,6 +36,7 @@ CREATE TABLE IF NOT EXISTS WorthHistory(
     CID INT,
     FOREIGN KEY(CID) REFERENCES Companies(CID),
     worth FLOAT NOT NULL,
+    tag TEXT,
     timestamp DATETIME NOT NULL
 );
 
