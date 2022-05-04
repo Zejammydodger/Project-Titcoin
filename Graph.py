@@ -1,12 +1,16 @@
 #like table.py but for actual properly orientated graphs
 import random
-from re import A
+from typing import Tuple
 
-from click import Abort
 from Table import typesafeCharNum
 from math import floor
 
-class Graph:
+#imports for pyplot
+from matplotlib import pyplot
+from discord import Embed , File
+import io
+
+class BasicTextGraph:
     def __init__(self , xAxisName : str , yAxisName : str , width = 50 , height = 50 , pointChar = "#"):
         assert len(xAxisName) <= width and len(yAxisName) <= height , "one or both axis names are too long"
         self.width = width
@@ -75,16 +79,64 @@ class Graph:
         b = f"{'-'*self.width}"
         c = f"{' ' * (1+yPadding+self.width-typesafeCharNum(self.maxVal_x))}"
         d = f"{str(self.maxVal_x)}"
-        e = f"{' '*(yPadding+1)}"
+        e = f"{' '*(yPadding+2)}"
         f = f"{xAxisName}"
 
         footer = f"{a}*{b}\n{c}{d}\n{e}{f}" # adds the bottom axis 
         return "".join(rows) + footer
     
+class BasicGraph:
+    def __init__(self , title : str , xAxisName : str , yAxisName : str , width = 500 , height = 500 , fname = "graph"):
+        self.xName = xAxisName
+        self.yName = yAxisName
+        self.width = width
+        self.height = height
+        self.title = title
+        self.fname = fname
+        self.__FileForm = "png"
+        self.__fullFileName = f"{self.fname}.{self.__FileForm}"
+        self.__data : list[tuple] = []
+        self.__buffer = io.BytesIO()
+        
+    def addPointTuple(self , point : Tuple):
+        self.__data.append(point)
+        
+    def addPoint(self , x , y):
+        self.addPointTuple((x , y))
+        
+    def plot(self):
+        #plots the current data and saves it into the buffer
+        self.__buffer.seek(0)
+        pyplot.title(self.title)
+        pyplot.xlabel(self.xName)
+        pyplot.ylabel(self.yName)
+        pyplot.plot(self.__data)
+        pyplot.savefig(self.__buffer , format = self.__FileForm)
+        
+    def __getFile(self) -> File:
+        self.__buffer.seek(0)
+        return File(self.__buffer , filename=self.__fullFileName)
+        
+    def getEmbed(self , color = 0x000000) -> Embed:
+        #returns an embeded with the graph as the only thing in it
+        f = self.__getFile()
+        e = Embed(title = self.title , color = color)
+        e.set_image(url = "attachment://" + self.__fullFileName)
+        return e
+    
+    def extendEmbed(self , emb : Embed):
+        #adds a field to the embed with the graph
+        f = self.__getFile()
+        emb.set_image(url = "attachment://" + self.__fullFileName)
+        
+    def __del__(self):
+        #this is the destructor of this obj
+        self.__buffer.close()
+        
     
     
 if __name__ == "__main__":
-    g = Graph("random" , "random")
+    g = BasicTextGraph("random" , "random")
     for i in range(100):
         g.addPoint(random.randint(0 , 1000) , random.randint(0 , 1000))
     print(g)
