@@ -178,6 +178,7 @@ class AutoUpdateGraph(BasicGraph):
     def __del__(self):
         self.__running = False
         self.__task.cancel()
+        super().__del__()
     
 if __name__ == "__main__":
     g = BasicTextGraph("random" , "random")
