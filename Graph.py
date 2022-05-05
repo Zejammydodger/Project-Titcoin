@@ -7,8 +7,9 @@ from math import floor
 
 #imports for pyplot
 from matplotlib import pyplot
-from discord import Embed , File
-import io
+from discord import Embed , File , TextChannel , Message
+from discord.ext.commands import Context
+import io , asyncio
 
 class BasicTextGraph:
     def __init__(self , xAxisName : str , yAxisName : str , width = 50 , height = 50 , pointChar = "#"):
@@ -134,6 +135,49 @@ class BasicGraph:
         self.__buffer.close()
         
     
+class AutoUpdateGraph(BasicGraph):
+    def __init__(self, title: str, xAxisName: str, yAxisName: str, embed = None , interval = 300 , width=500, height=500, fname="graph" , color = 0x000000):
+        super().__init__(title, xAxisName, yAxisName, width, height, fname)
+        self.embed = self.extendEmbed(embed) if embed is not None else self.getEmbed(color = color)#basically if this is none, then send a new embed, and update from there
+        self.message : Message = None # this will be the message object generated when the embed is sent
+        self.interval = interval
+        self.__running = False
+        self.__changed = False
+        
+        #starting task
+        self.__task = asyncio.create_task(self.updater)
+        
+    async def sendToChannel(self , discordChannel : TextChannel):
+        self.message = await discordChannel.send(embed = self.embed)
+        self.__running = True # only allowed to run when the message has been sent
+        
+    async def sendToCtx(self , ctx : Context):
+        await self.sendToChannel(ctx.channel)
+        
+    def startWithMessage(self , msg : Message):
+        #skips sending the message, this is here in case the message is loaded say after the bot closes and reopens
+        self.message = msg
+        self.__running = True
+        
+    async def plot(self):
+        super().plot()
+        await self.message.edit(embed = self.embed)
+        
+    def addPoint(self, x, y):
+        self.__changed = True
+        return super().addPoint(x, y)
+    
+    async def updater(self):
+        #asyncio task that updates the message every interval seconds
+        while True:
+            if self.__running and self.__changed:
+                await self.plot()
+                self.__changed = False
+            await asyncio.sleep(self.interval)
+            
+    def __del__(self):
+        self.__running = False
+        self.__task.cancel()
     
 if __name__ == "__main__":
     g = BasicTextGraph("random" , "random")
