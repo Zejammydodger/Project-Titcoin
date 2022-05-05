@@ -12,4 +12,4 @@ add proper __str__ methods to all objects (with some kind of consistency)
 test "https://pypi.org/project/discord-ui/"
 convert all commands that could benefit from  it
 
-matplotlib gragh message auto updater thing
+test graph modules
