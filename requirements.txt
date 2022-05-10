@@ -1,5 +1,6 @@
 discord.py
 mysql-connector-python
 cogwatch
+discord-ui
 SQLAlchemy
 mysql-connector-python

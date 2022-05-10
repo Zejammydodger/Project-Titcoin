@@ -5,6 +5,10 @@ from extensions import util
 from extensions.perks.perk import Perk
 from Table import Table , BaseColumn , IndexColumn , PercentOfColumn
 
+#discord ui testing imports
+from discord_ui import SlashInteraction , UI , Button , LinkButton
+from discord_ui.cogs import slash_command, subslash_command, listening_component
+
 
 # the actual titcoin functionality
 
@@ -38,6 +42,19 @@ voiceVal = 1
 
 ### titcoin values
 
+class test(commands.Cog):
+    def __init__(self , bot):
+        super().__init__()
+        bot.add_cog(self)
+
+    @slash_command("test" , "this is a test slash command" , guild_ids=[693537199500689439])
+    async def command(self , ctx : SlashInteraction):
+        await ctx.respond("this is a test response")
+        
+    @commands.command()
+    async def testCom(self , ctx : commands.Context):
+        await ctx.send("test succeeded")
+
 
 class TitCoin(commands.Cog):
     def __init__(self, bot) -> None:
@@ -57,7 +74,6 @@ class TitCoin(commands.Cog):
         print("Titcoin innit, profiles loaded")
 
     async def randomAward(self):
-        
         while True:
             # place a reward for 25tc in a channel that hasn't been used for at least 5 minutes every 1 - 3 hours
             possibleChannels = []
@@ -274,3 +290,4 @@ def setup(bot):
     admin_zoo.AdminZoo(bot, tc)
     server_mute.ServerMute(bot, tc)
     start_company.StartCompany(bot, tc)
+    
