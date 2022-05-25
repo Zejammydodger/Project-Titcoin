@@ -94,6 +94,7 @@ class BasicGraph:
         self.height = height
         self.title = title
         self.fname = fname
+        self.file = None # this is the file that you need to send with the embed for some reason is wack  
         self.__FileForm = "png"
         self.__fullFileName = f"{self.fname}.{self.__FileForm}"
         self.__data : list[tuple] = []
@@ -121,14 +122,16 @@ class BasicGraph:
     def getEmbed(self , color = 0x000000) -> Embed:
         #returns an embeded with the graph as the only thing in it
         f = self.__getFile()
+        self.file = f
         e = Embed(title = self.title , color = color)
-        e.set_image(url = "attachment://" + self.__fullFileName)
+        e.set_image(url = "attachment://" + f.filename)
         return e
     
     def extendEmbed(self , emb : Embed):
         #adds a field to the embed with the graph
         f = self.__getFile()
-        emb.set_image(url = "attachment://" + self.__fullFileName)
+        self.file = f
+        emb.set_image(url = "attachment://" + f.filename)
         
     def __del__(self):
         #this is the destructor of this obj
@@ -148,7 +151,7 @@ class AutoUpdateGraph(BasicGraph):
         self.__task = asyncio.create_task(self.updater)
         
     async def sendToChannel(self , discordChannel : TextChannel):
-        self.message = await discordChannel.send(embed = self.embed)
+        self.message = await discordChannel.send(embed = self.embed , file=self.file)
         self.__running = True # only allowed to run when the message has been sent
         
     async def sendToCtx(self , ctx : Context):
@@ -161,7 +164,7 @@ class AutoUpdateGraph(BasicGraph):
         
     async def plot(self):
         super().plot()
-        await self.message.edit(embed = self.embed)
+        await self.message.edit(embed = self.embed , file = self.file)
         
     def addPoint(self, x, y):
         self.__changed = True

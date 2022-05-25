@@ -1,4 +1,3 @@
-from __future__ import annotations
 import datetime
 import discord
 from discord.ext import commands
@@ -11,16 +10,17 @@ titcoin_cog: titcoin.TitCoin
 
 
 class StartCompany(Perk):
-    def __init__(self, bot: commands.Bot, titcoin: titcoin.TitCoin, basePrice=500):
+    def __init__(self, bot: commands.Bot, titcoin: titcoin.TitCoin, basePrice=1):
         super().__init__(bot, titcoin, basePrice)
         self.registerCommand(self.startCompany)
         self.description = "Start your own company!"
-        global titcoin_cog    # best I could do, don't judge me
+        global titcoin_cog    # best I could do, don't judge me   >:|
         titcoin_cog = self.titcoin
 
     @staticmethod
     def hasNoCompany():
         async def check(ctx: commands.Context):
+            assert titcoin_cog is not None , "cog hasnt loaded yet"
             P = titcoin_cog.profiles["profiles"][ctx.author.id]
             print(P.company)
             if P.company is None:

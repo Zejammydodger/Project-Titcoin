@@ -6,6 +6,7 @@ import mysql.connector
 import mysql.connector.connection as Conn
 import datetime
 import discord
+import warnings
 
 # NOTE need a way to delete oldest record of balance and worth by PID and CID respectively
 
@@ -41,7 +42,7 @@ def strToDatetime(string: str) -> datetime.datetime:
     return datetime.datetime.strptime(string, "%Y-%m-%d %H:%M:%S")
 
 
-def executeScript(pathToScript: str, connection: Conn.MySQLConnection, *args) -> list[tuple] | None:
+def executeScript(pathToScript: str, connection: Conn.MySQLConnection, *args , debug = False) -> list[tuple] | None:
     # executes a script
     connection.reconnect()
     cursor: Conn.MySQLCursor = connection.cursor()
@@ -61,9 +62,17 @@ def executeScript(pathToScript: str, connection: Conn.MySQLConnection, *args) ->
             newArgs.append(arg)
     args = tuple(newArgs)
     statement = statement.format(*args)
-    # print(f"{'='*20}\nexecuteing:\n{statement}\n{'='*20}")
+        
     cursor.execute(statement)
     data = cursor.fetchall()
+    if debug:
+        print(f"{'='*20}\nexecuteing:\n{statement}\n{'='*20}")
+        warns = cursor.fetchwarnings()
+        if warns is None:
+            print("no warnings")
+        else:
+            for i , w in enumerate(warns):
+                print(f"[{i} WARNING] {w}")
     assert cursor.close(), "cursor did not close properly"
 
     # connection.commit()
@@ -131,10 +140,10 @@ class Profile:
         executeScript("scripts/insertProfile.sql", connection,
                       self.discordID)  # ensures there is a profile in the DB with the discordID
         connection.reconnect()  # wow i really have to do that all the time
-        if self.company is not None:
+        if self.company is not None and self.company.CID is None:
             # need a way to get CID
-            CID = self.company.getCID(connection, self.discordID)
-            self.company.INSERT(connection, self.discordID, CID)
+            print(f"[{self.company.name}] is being inserted on line 136")
+            self.company.INSERT(connection, self.discordID)
 
         for DT, bal in self.balanceHist.items():
             DT = datetimeToStr(DT)
@@ -142,12 +151,12 @@ class Profile:
             executeScript("scripts/insertBalance.sql", connection, self.discordID, bal, DT)
 
         for s in self.shares:
-            CID = s.company.getCID(connection, self.discordID)
+            CID = s.company.CID
             s.INSERT(connection, self.discordID, CID)
 
     def __str__(self) -> str:
         retStr = f"[{self.discordID}]\n"
-        for date, bal in self.balanceHist.items():
+        for date, bal in list(self.balanceHist.items())[:30]:
             retStr += f"\t[{datetimeToStr(date)}] : [{bal}]\n"
         retStr += f"\n\n{'=' * 10}\nCurrent balance : [{self.currentBal}]\n\n"
         return retStr
@@ -193,15 +202,14 @@ class Profile:
 
 
 class Share:
-    def __init__(self, company, profile: Profile, percentage: float, sid: int):
+    def __init__(self, company, profile: Profile, percentage: float):
         self.company = company
         self.profile = profile
         self.percentage = percentage
-        self.ID = sid
 
     def INSERT(self, connection: Conn.MySQLConnection, discordID, CID):
         # no need to worry about inserting company, that's done from profile
-        executeScript("scripts/insertShare.sql", connection, (discordID, CID, self.percentage, self.ID))
+        executeScript("scripts/insertShare.sql", connection, (discordID, CID, self.percentage))
 
     @staticmethod
     def SELECTALL(connection: Conn.MySQLConnection) -> list[dict[str: int]]:
@@ -236,16 +244,28 @@ class Company:
         self.owner.company = self
         self.worthHist = dict(sorted(worthHist.items(), key=lambda x: x[0]))  # newest to oldest
         self.shares = shares
-        self.currentWorth = self.worthHist.values()[0]
+        self.currentWorth = list(self.worthHist.values())[0]
         self.name = name
+        self.CID = None
 
-    def INSERT(self, connection: Conn.MySQLConnection, discordID, CID):
+    def INSERT(self, connection: Conn.MySQLConnection, discordID):
         # dont have to worry about shares or profile
-        executeScript("scripts/insertCompany.sql", connection, (discordID, self.name))
+        executeScript("scripts/insertCompany.sql", connection, discordID, self.name , debug = True)
+        self.CID = self.getCID(connection , discordID)
         for date, worth in self.worthHist.items():
             date: datetime.datetime
             date = datetimeToStr(date)
-            executeScript("scripts/insertWorth.sql", connection, (CID, date, worth))
+            executeScript("scripts/insertWorth.sql", connection, self.CID, date, worth)
+
+    def getCID(self , conn : Conn.MySQLConnection , discordID):
+        #called by load, so CID always exsists
+        conn.reconnect()
+        cur : Conn.MySQLCursor = conn.cursor()
+        cur.execute(f"SELECT * FROM companies WHERE PID = {discordID}")
+        CID = cur.fetchone()
+        assert CID is not None , f"could not find CID of {self.name}"
+        self.CID = CID[0]
+        return CID[0]
 
     @staticmethod
     def SELECTALL(connection: Conn.MySQLConnection) -> list[dict[str: int]]:
@@ -266,7 +286,7 @@ class Company:
 
     @staticmethod
     def getWorthHist(connection: Conn.MySQLConnection, CID):
-        rows = executeScript("scripts/getWorthHistory.sql", connection, (CID,))
+        rows = executeScript("scripts/getWorthHistory.sql", connection, CID)
         # [(created , worth)]
         retlist = []
         for created, worth in rows:
@@ -386,6 +406,7 @@ def load(connection: Conn.MySQLConnection) -> dict:
         for dat in worthHist:
             hist[dat["created"]] = dat["worth"]
         company = Company(owner, hist, [], name)  # initialised as empty
+        company.CID = CID
         companies[CID] = company
 
     for sDat in shareData:

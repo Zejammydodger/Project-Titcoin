@@ -1,14 +1,16 @@
-import discord, asyncio, math, random, datetime
+import discord, asyncio, math, random, datetime , time
 from discord.ext import commands, tasks
 from sqlHelper import Profile, Company, Share, load, save, initDataBase, blankHistory
 from extensions import util
 from extensions.perks.perk import Perk
 from Table import Table , BaseColumn , IndexColumn , PercentOfColumn
+from Graph import BasicTextGraph , BasicGraph , AutoUpdateGraph
 
+"""
 #discord ui testing imports
 from discord_ui import SlashInteraction , UI , Button , LinkButton
 from discord_ui.cogs import slash_command, subslash_command, listening_component
-
+"""
 
 # the actual titcoin functionality
 
@@ -47,14 +49,27 @@ class test(commands.Cog):
         super().__init__()
         bot.add_cog(self)
 
-    @slash_command("test" , "this is a test slash command" , guild_ids=[693537199500689439])
-    async def command(self , ctx : SlashInteraction):
-        await ctx.respond("this is a test response")
+    @commands.command()
+    async def textGraphTest(self , ctx : commands.Context):
+        #tests the super cool giga chad text graph
+        g = BasicTextGraph("ur mum" , "# times i did" , width=30 , height=30)
+        for i in range(30):
+            g.addPoint(random.randint(0 , 69) , random.randint(0 , 69))
+        await ctx.send(embed = discord.Embed(title = "lol" , description = f"```{str(g)}```"))
+    
+    @commands.command()
+    async def testGraph(self , ctx : commands.Context):
+        #tests the matplot lib version with a basic graph
+        g = BasicGraph("# of times i did ur mum" , "# of times" , "ur mum")
+        for i in range(30):
+            g.addPoint(random.randint(0 , 69) , random.randint(0 , 69))
+        e = g.getEmbed()
+        await ctx.send(embed = e , file = g.file)
         
     @commands.command()
-    async def testCom(self , ctx : commands.Context):
-        await ctx.send("test succeeded")
-
+    async def testAutoGraph(self , ctx : commands.Context):
+        #tests the auto graph functionality
+        pass 
 
 class TitCoin(commands.Cog):
     def __init__(self, bot) -> None:
@@ -269,6 +284,14 @@ class TitCoin(commands.Cog):
             perk.extendEmbed(embed)
         await ctx.send(embed=embed)
             
+    @commands.command()
+    async def forceSave(self , ctx):
+        await ctx.send("forceing a save....")
+        t1 = time.time()
+        save(self.connection , self.profiles)
+        t2 = time.time()
+        await ctx.send(f"saved in `[{round(t2 - t1 , 2)} seconds]`")
+            
     ### cog unload
     def cog_unload(self):
         print("unloading...")
@@ -291,3 +314,4 @@ def setup(bot):
     server_mute.ServerMute(bot, tc)
     start_company.StartCompany(bot, tc)
     
+    test(bot)
