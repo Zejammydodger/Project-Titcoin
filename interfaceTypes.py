@@ -12,3 +12,34 @@ ok heres the idea:
     define the types here so that we dont have to re write the implementation every time we change how it works 
 
 """
+
+#NOTE
+"""
+    also swap to useing **kwargs wherever possible
+"""
+
+import datetime , discord
+from datetime import datetime as dt
+
+class Profile:
+    def __init__(self , **kwargs):
+        raise NotImplementedError()
+    
+    def addBal(self , amount : float):
+        raise NotImplementedError()
+    
+    def getEmbed(self, richest : bool):
+        raise NotImplementedError()
+    
+    def __str__(self) -> str:
+        raise NotImplementedError()     
+    
+class Share:
+    def __init__(self , **kwargs):
+        raise NotImplementedError()
+    
+    def getWorth(self) -> float:
+        raise NotImplementedError()
+    
+    def sell(self):
+        raise NotImplementedError()
