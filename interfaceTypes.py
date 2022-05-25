@@ -43,3 +43,31 @@ class Share:
     
     def sell(self):
         raise NotImplementedError()
+    
+    def __str__(self) -> str:
+        raise NotImplementedError()
+    
+class Company:
+    def __init__(self , **kwargs):
+        raise NotImplementedError()
+    
+    def createShare(self , profile : Profile , amount : float):
+        raise NotImplementedError()
+    
+    def sellShare(self , share : Share):
+        raise NotImplementedError()
+    
+    def __str__(self) -> str:
+        raise NotImplementedError()
+    
+    
+class TitcoinDB:
+    #basically just a data class that holds the data in the database
+    def __init__(self):
+        raise NotImplementedError()
+    
+    def save(self):
+        raise NotImplementedError()
+    
+    def load(self):
+        raise NotImplementedError()
