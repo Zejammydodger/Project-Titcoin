@@ -1,0 +1,1 @@
+#error handleing for the bot
