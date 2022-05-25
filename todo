@@ -13,3 +13,5 @@ test "https://pypi.org/project/discord-ui/"
 convert all commands that could benefit from  it
 
 test graph modules
+
+remove "from __future__ import annotations" from a bunch of files i think it got auto added by something but its not actually used by anything
