@@ -1,52 +1,44 @@
-/* 
-initialize the database if it isnt already initialized
-*/
-CREATE DATABASE IF NOT EXISTS TitCoin;
-USE TitCoin;
-
-/* profiles of all members, along with their balances */
-CREATE TABLE IF NOT EXISTS Profiles(
-    discordID BIGINT NOT NULL,
-    balance DOUBLE NOT NULL DEFAULT 0,
-    PRIMARY KEY(discordID)
+create table profiles
+(
+    id bigint not null primary key,
+    balance decimal(14, 2) not null
 );
 
-/* log of balance changes */
-CREATE TABLE IF NOT EXISTS BalanceHistory(
-    PID BIGINT,
-    FOREIGN KEY(PID) REFERENCES Profiles(id),
-    balance FLOAT NOT NULL,
-    tag TEXT,
-    timestamp DATETIME NOT NULL
+create table balancehistory
+(
+    id int auto_increment primary key,
+    profile_id bigint not null,
+    balance decimal(14, 2) not null,
+    time datetime not null,
+    tag text null,
+    constraint balancehistory_ibfk_1 foreign key (profile_id) references profiles (id)
 );
 
-/* all companies, along with their associated owners */
-CREATE TABLE IF NOT EXISTS Companies(
-    CID INT AUTO_INCREMENT,
-    PID BIGINT,
-    FOREIGN KEY(PID) REFERENCES Profiles(id),
-    companyName TEXT NOT NULL,
-    worth DOUBLE NOT NULL,
-    shares INT,
-    PRIMARY KEY(CID)
+create table companies
+(
+    id int auto_increment primary key,
+    profile_id bigint         null,
+    name       text           not null,
+    worth      decimal(14, 2) not null,
+    constraint companies_ibfk_1 foreign key (profile_id) references profiles (id)
 );
 
-/* history of worth of companies */
-CREATE TABLE IF NOT EXISTS WorthHistory(
-    CID INT,
-    FOREIGN KEY(CID) REFERENCES Companies(id),
-    worth FLOAT NOT NULL,
-    tag TEXT,
-    timestamp DATETIME NOT NULL
+create table shares
+(
+    id int auto_increment primary key,
+    profile_id bigint not null,
+    company_id int    not null,
+    num_shares bigint not null,
+    constraint shares_ibfk_1 foreign key (profile_id) references profiles (id),
+    constraint shares_ibfk_2 foreign key (company_id) references companies (id)
 );
 
-/* record of share ownership */
-CREATE TABLE IF NOT EXISTS Shares(
-    ShareID INT AUTO_INCREMENT NOT NULL,
-    PID BIGINT,
-    CID INT,
-    FOREIGN KEY(PID) REFERENCES Profiles(id),
-    FOREIGN KEY(CID) REFERENCES Companies(id),
-    numShares BIGINT NOT NULL,
-    PRIMARY KEY(ShareID)
+create table worthhistory
+(
+    id int auto_increment primary key,
+    company_id int not null,
+    worth decimal(14, 2) not null,
+    time datetime not null,
+    tag text null,
+    constraint worthhistory_ibfk_1 foreign key (company_id) references companies (id)
 );
