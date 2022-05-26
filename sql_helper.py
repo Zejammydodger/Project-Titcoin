@@ -27,7 +27,7 @@ class Profile(Base):
     balance = sq.Column("balance", sq.Numeric(14, 2))
 
     companies = orm.relationship("Company", back_populates="owner")
-    history = orm.relationship("BalanceSlice")
+    history = orm.relationship("BalanceSlice", back_populates="profile")
 
     def __repr__(self):
         return f"Profile(id={self.id!r}, balance={self.balance!r}, companies={', '.join(i.name for i in self.companies)})"
@@ -38,22 +38,25 @@ class Company(Base):
 
     id = sq.Column("id", sq.Integer, primary_key=True, nullable=False, autoincrement=True)
     profile_id = sq.Column("profile_id", sq.BigInteger, sq.ForeignKey("profiles.id"))
-    name = sq.Column("name", sq.TEXT)
+    name = sq.Column("name", sq.Text)
     worth = sq.Column("worth", sq.Numeric(14, 2))
 
     owner = orm.relationship("Profile", uselist=False, back_populates="companies")
 
     def __repr__(self):
-        return f"Company(id={self.id!r}, name={self.name!r}, worth={self.worth!r}, owner={self.owner.id!r})"
+        return f"Company(id={self.id!r}, name={self.name!r}, worth={self.worth!r})"
 
 
 class BalanceSlice(Base):
     __tablename__ = "balancehistory"
 
-    profile_id = sq.Column("profile_id", sq.BigInteger, sq.ForeignKey("profiles.id"))
-    balance = sq.Column("balance", sq.Numeric(14, 2))
-    tag = sq.Column("tag", sq.TEXT)
-    time = sq.Column("time", sq.DATETIME)
+    id = sq.Column("id", sq.Integer, primary_key=True, nullable=False, autoincrement=True)
+    profile_id = sq.Column("profile_id", sq.BigInteger, sq.ForeignKey("profiles.id"), nullable=False)
+    balance = sq.Column("balance", sq.Numeric(14, 2), nullable=False)
+    time = sq.Column("time", sq.DateTime, nullable=False)
+    tag = sq.Column("tag", sq.Text)
+
+    profile = orm.relationship("Profile", uselist=False, back_populates="history")
 
     def __repr__(self):
         return f"BalanceSlice(profile_id={self.profile_id!r}, balance={self.balance!r}, tag={self.tag!r}, time={self.time!r})"
@@ -61,7 +64,8 @@ class BalanceSlice(Base):
 
 mapper_registry.metadata.create_all(engine)
 
-with Session() as session:
-    result: sq.engine.Result = session.execute(sq.select(Profile))
-    for row in result:
-        print(row[0].companies[1].owner)
+if __name__ == "__main__":
+    with Session() as session:
+        result: sq.engine.Result = session.execute(sq.select(Profile))
+        for row in result:
+            print(row[0])
