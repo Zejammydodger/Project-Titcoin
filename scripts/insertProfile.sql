@@ -1,3 +1,3 @@
 USE TitCoin;
-INSERT INTO Profiles(discordID) VALUES({});
+INSERT INTO Profiles(id) VALUES({});
 COMMIT;

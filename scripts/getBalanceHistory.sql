@@ -1,1 +1,1 @@
-SELECT balance , created FROM BalanceHistory WHERE PID = {};
+SELECT balance , created FROM BalanceHistory WHERE profile_id = {};

@@ -14,7 +14,7 @@ CREATE TABLE IF NOT EXISTS Profiles(
 /* log of balance changes */
 CREATE TABLE IF NOT EXISTS BalanceHistory(
     PID BIGINT,
-    FOREIGN KEY(PID) REFERENCES Profiles(discordID),
+    FOREIGN KEY(PID) REFERENCES Profiles(id),
     balance FLOAT NOT NULL,
     tag TEXT,
     timestamp DATETIME NOT NULL
@@ -24,7 +24,7 @@ CREATE TABLE IF NOT EXISTS BalanceHistory(
 CREATE TABLE IF NOT EXISTS Companies(
     CID INT AUTO_INCREMENT,
     PID BIGINT,
-    FOREIGN KEY(PID) REFERENCES Profiles(discordID), 
+    FOREIGN KEY(PID) REFERENCES Profiles(id),
     companyName TEXT NOT NULL,
     worth DOUBLE NOT NULL,
     shares INT,
@@ -34,7 +34,7 @@ CREATE TABLE IF NOT EXISTS Companies(
 /* history of worth of companies */
 CREATE TABLE IF NOT EXISTS WorthHistory(
     CID INT,
-    FOREIGN KEY(CID) REFERENCES Companies(CID),
+    FOREIGN KEY(CID) REFERENCES Companies(id),
     worth FLOAT NOT NULL,
     tag TEXT,
     timestamp DATETIME NOT NULL
@@ -45,8 +45,8 @@ CREATE TABLE IF NOT EXISTS Shares(
     ShareID INT AUTO_INCREMENT NOT NULL,
     PID BIGINT,
     CID INT,
-    FOREIGN KEY(PID) REFERENCES Profiles(discordID),
-    FOREIGN KEY(CID) REFERENCES Companies(CID),
+    FOREIGN KEY(PID) REFERENCES Profiles(id),
+    FOREIGN KEY(CID) REFERENCES Companies(id),
     numShares BIGINT NOT NULL,
     PRIMARY KEY(ShareID)
 );
