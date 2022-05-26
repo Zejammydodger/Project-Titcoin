@@ -1,5 +1,8 @@
 import sqlalchemy as sq
 import sqlalchemy.orm as orm
+from decimal import Decimal
+import datetime
+import time
 
 with open("secrets/password.txt", mode="r") as file:
     password = file.readline()
@@ -8,6 +11,14 @@ del password
 
 mapper_registry = orm.registry()
 Base = mapper_registry.generate_base()
+
+
+def get_time():
+    return datetime.datetime.utcfromtimestamp(time.time())
+
+
+def format_time(_datetime: datetime.datetime):
+    return _datetime.strftime("%Y-%m-%d %H:%M:%S")
 
 
 class Profile(Base):
@@ -127,6 +138,7 @@ def get_session():
 
 
 if __name__ == "__main__":
+    print(format_time(get_time()))
     with get_session() as session:
         result: sq.engine.Result = session.execute(sq.select(Profile))
         for row in result:
