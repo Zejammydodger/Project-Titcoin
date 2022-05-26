@@ -42,6 +42,7 @@ class Company(Base):
     worth = sq.Column("worth", sq.Numeric(14, 2))
 
     owner = orm.relationship("Profile", uselist=False, back_populates="companies")
+    history = orm.relationship("WorthSlice", uselist=False, back_populates="company")
 
     def __repr__(self):
         return f"Company(id={self.id!r}, name={self.name!r}, worth={self.worth!r})"
@@ -59,8 +60,22 @@ class BalanceSlice(Base):
     profile = orm.relationship("Profile", uselist=False, back_populates="history")
 
     def __repr__(self):
-        return f"BalanceSlice(profile_id={self.profile_id!r}, balance={self.balance!r}, tag={self.tag!r}, time={self.time!r})"
+        return f"BalanceSlice(id={self.id!r}, profile_id={self.profile_id!r}, balance={self.balance!r}, time={self.time!r}, tag={self.tag!r})"
 
+
+class WorthSlice(Base):
+    __tablename__ = "worthhistory"
+
+    id = sq.Column("id", sq.Integer, primary_key=True, nullable=False, autoincrement=True)
+    company_id = sq.Column("company_id", sq.Integer, sq.ForeignKey("companies.id"), nullable=False)
+    worth = sq.Column("worth", sq.Numeric(14, 2), nullable=False)
+    time = sq.Column("time", sq.DateTime, nullable=False)
+    tag = sq.Column("tag", sq.Text)
+
+    company = orm.relationship("Company", uselist=False, back_populates="history")
+
+    def __repr__(self):
+        return f"WorthSlice(id={self.id!r}, company_id={self.company_id!r}, worth={self.worth!r}, time={self.time!r}, tag={self.tag!r})"
 
 mapper_registry.metadata.create_all(engine)
 
