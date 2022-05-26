@@ -28,7 +28,7 @@ class Company(Base):
     __tablename__ = "companies"
 
     id = sq.Column("id", sq.Integer, primary_key=True, nullable=False, autoincrement=True)
-    profile_id = sq.Column("profile_id", sq.BigInteger, sq.ForeignKey("profiles.id"))
+    _profile_id = sq.Column("profile_id", sq.BigInteger, sq.ForeignKey("profiles.id"))
     name = sq.Column("name", sq.Text)
     worth = sq.Column("worth", sq.Numeric(14, 2))
 
@@ -44,7 +44,7 @@ class BalanceSlice(Base):
     __tablename__ = "balancehistory"
 
     id = sq.Column("id", sq.Integer, primary_key=True, nullable=False, autoincrement=True)
-    profile_id = sq.Column("profile_id", sq.BigInteger, sq.ForeignKey("profiles.id"), nullable=False)
+    _profile_id = sq.Column("profile_id", sq.BigInteger, sq.ForeignKey("profiles.id"), nullable=False)
     balance = sq.Column("balance", sq.Numeric(14, 2), nullable=False)
     time = sq.Column("time", sq.DateTime, nullable=False)
     tag = sq.Column("tag", sq.Text)
@@ -52,14 +52,14 @@ class BalanceSlice(Base):
     profile = orm.relationship("Profile", uselist=False, back_populates="history")
 
     def __repr__(self):
-        return f"BalanceSlice(id={self.id!r}, profile_id={self.profile_id!r}, balance={self.balance!r}, time={self.time!r}, tag={self.tag!r})"
+        return f"BalanceSlice(id={self.id!r}, profile_id={self._profile_id!r}, balance={self.balance!r}, time={self.time!r}, tag={self.tag!r})"
 
 
 class WorthSlice(Base):
     __tablename__ = "worthhistory"
 
     id = sq.Column("id", sq.Integer, primary_key=True, nullable=False, autoincrement=True)
-    company_id = sq.Column("company_id", sq.Integer, sq.ForeignKey("companies.id"), nullable=False)
+    _company_id = sq.Column("company_id", sq.Integer, sq.ForeignKey("companies.id"), nullable=False)
     worth = sq.Column("worth", sq.Numeric(14, 2), nullable=False)
     time = sq.Column("time", sq.DateTime, nullable=False)
     tag = sq.Column("tag", sq.Text)
@@ -67,22 +67,22 @@ class WorthSlice(Base):
     company = orm.relationship("Company", uselist=False, back_populates="history")
 
     def __repr__(self):
-        return f"WorthSlice(id={self.id!r}, company_id={self.company_id!r}, worth={self.worth!r}, time={self.time!r}, tag={self.tag!r})"
+        return f"WorthSlice(id={self.id!r}, company_id={self._company_id!r}, worth={self.worth!r}, time={self.time!r}, tag={self.tag!r})"
 
 
 class ShareEntry(Base):
     __tablename__ = "shares"
 
     id = sq.Column("id", sq.Integer, primary_key=True, nullable=False, autoincrement=True)
-    profile_id = sq.Column("profile_id", sq.BigInteger, sq.ForeignKey("profiles.id"), nullable=False)
-    company_id = sq.Column("company_id", sq.Integer, sq.ForeignKey("companies.id"), nullable=False)
+    _profile_id = sq.Column("profile_id", sq.BigInteger, sq.ForeignKey("profiles.id"), nullable=False)
+    _company_id = sq.Column("company_id", sq.Integer, sq.ForeignKey("companies.id"), nullable=False)
     num_shares = sq.Column("num_shares", sq.BigInteger, nullable=False)
 
     profile = orm.relationship("Profile", uselist=False, back_populates="share_entries")
     company = orm.relationship("Company", uselist=False, back_populates="share_entries")
 
     def __repr__(self):
-        return f"ShareEntry(id={self.id!r}, profile_id={self.profile_id!r}, company_id={self.company_id!r}, num_shares={self.num_shares!r})"
+        return f"ShareEntry(id={self.id!r}, profile_id={self._profile_id!r}, company_id={self._company_id!r}, num_shares={self.num_shares!r})"
 
 
 mapper_registry.metadata.create_all(engine)
