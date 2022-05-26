@@ -4,3 +4,4 @@ cogwatch
 discord-ui
 SQLAlchemy
 mysql-connector-python
+matplotlib
