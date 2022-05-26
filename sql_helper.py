@@ -28,6 +28,7 @@ class Profile(Base):
 
     companies = orm.relationship("Company", back_populates="owner")
     history = orm.relationship("BalanceSlice", back_populates="profile")
+    share_entries = orm.relationship("ShareEntry", back_populates="profile")
 
     def __repr__(self):
         return f"Profile(id={self.id!r}, balance={self.balance!r}, companies={', '.join(i.name for i in self.companies)})"
@@ -43,6 +44,7 @@ class Company(Base):
 
     owner = orm.relationship("Profile", uselist=False, back_populates="companies")
     history = orm.relationship("WorthSlice", uselist=False, back_populates="company")
+    share_entries = orm.relationship("ShareEntry", back_populates="company")
 
     def __repr__(self):
         return f"Company(id={self.id!r}, name={self.name!r}, worth={self.worth!r})"
@@ -76,6 +78,21 @@ class WorthSlice(Base):
 
     def __repr__(self):
         return f"WorthSlice(id={self.id!r}, company_id={self.company_id!r}, worth={self.worth!r}, time={self.time!r}, tag={self.tag!r})"
+
+
+class ShareEntry(Base):
+    __tablename__ = "shares"
+
+    id = sq.Column("id", sq.Integer, primary_key=True, nullable=False, autoincrement=True)
+    profile_id = sq.Column("profile_id", sq.BigInteger, sq.ForeignKey("profiles.id"), nullable=False)
+    company_id = sq.Column("company_id", sq.Integer, sq.ForeignKey("companies.id"), nullable=False)
+    num_shares = sq.Column("num_shares", sq.BigInteger, nullable=False)
+
+    profile = orm.relationship("Profile", uselist=False, back_populates="share_entries")
+    company = orm.relationship("Company", uselist=False, back_populates="share_entries")
+
+    def __repr__(self):
+        return f"ShareEntry(id={self.id!r}, profile_id={self.profile_id!r}, company_id={self.company_id!r}, num_shares={self.num_shares!r})"
 
 mapper_registry.metadata.create_all(engine)
 
