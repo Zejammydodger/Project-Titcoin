@@ -4,20 +4,10 @@ import sqlalchemy.orm as orm
 with open("secrets/password.txt", mode="r") as file:
     password = file.readline()
 engine = sq.create_engine(f"mysql+mysqlconnector://root:{password}@localhost/TitCoin", echo=False, future=True)
-
-"""
-with engine.connect() as conn:
-    result = conn.execute(text("select * from Profiles"))
-    print(result.all())
-"""
-
-#with Session(engine) as session:
-#    result = session.execute(text("select * from Profiles"))
-#    print(result.all())
+del password
 
 mapper_registry = orm.registry()
 Base = mapper_registry.generate_base()
-Session = orm.sessionmaker(bind=engine)
 
 
 class Profile(Base):
@@ -94,10 +84,16 @@ class ShareEntry(Base):
     def __repr__(self):
         return f"ShareEntry(id={self.id!r}, profile_id={self.profile_id!r}, company_id={self.company_id!r}, num_shares={self.num_shares!r})"
 
+
 mapper_registry.metadata.create_all(engine)
 
+
+def get_session():
+    return orm.sessionmaker(bind=engine)()
+
+
 if __name__ == "__main__":
-    with Session() as session:
+    with get_session() as session:
         result: sq.engine.Result = session.execute(sq.select(Profile))
         for row in result:
             print(row[0])
