@@ -20,6 +20,14 @@ class Profile(Base):
     history = orm.relationship("BalanceSlice", back_populates="profile")
     share_entries = orm.relationship("ShareEntry", back_populates="profile")
 
+    def __init__(self, id: int, balance: Decimal):
+        super().__init__()
+        self.id = id
+        self.balance = balance
+
+    def change_balance(self, amount):
+        self.balance += amount
+
     def __repr__(self):
         return f"Profile(id={self.id!r}, balance={self.balance!r}, companies={', '.join(i.name for i in self.companies)})"
 
@@ -36,6 +44,12 @@ class Company(Base):
     history = orm.relationship("WorthSlice", uselist=False, back_populates="company")
     share_entries = orm.relationship("ShareEntry", back_populates="company")
 
+    def __init__(self, owner: Profile, name: str, worth: Decimal):
+        super().__init__()
+        self._profile_id = owner.id
+        self.name = name
+        self.worth = worth
+
     def __repr__(self):
         return f"Company(id={self.id!r}, name={self.name!r}, worth={self.worth!r})"
 
@@ -50,6 +64,13 @@ class BalanceSlice(Base):
     tag = sq.Column("tag", sq.Text)
 
     profile = orm.relationship("Profile", uselist=False, back_populates="history")
+
+    def __init__(self, profile: Profile, balance: Decimal, time: datetime.datetime = get_time(), tag: str = None):
+        super().__init__()
+        self._profile_id = profile.id
+        self.balance = balance
+        self.time = format_time(time)
+        self.tag = tag
 
     def __repr__(self):
         return f"BalanceSlice(id={self.id!r}, profile_id={self._profile_id!r}, balance={self.balance!r}, time={self.time!r}, tag={self.tag!r})"
@@ -66,6 +87,13 @@ class WorthSlice(Base):
 
     company = orm.relationship("Company", uselist=False, back_populates="history")
 
+    def __init__(self, company: Company, balance: Decimal, time: datetime.datetime = get_time(), tag: str = None):
+        super().__init__()
+        self._company_id = company.id
+        self.balance = balance
+        self.time = format_time(time)
+        self.tag = tag
+
     def __repr__(self):
         return f"WorthSlice(id={self.id!r}, company_id={self._company_id!r}, worth={self.worth!r}, time={self.time!r}, tag={self.tag!r})"
 
@@ -80,6 +108,12 @@ class ShareEntry(Base):
 
     profile = orm.relationship("Profile", uselist=False, back_populates="share_entries")
     company = orm.relationship("Company", uselist=False, back_populates="share_entries")
+
+    def __init__(self, profile: Profile, company: Company, num_shares: int):
+        super().__init__()
+        self._profile_id = profile.id
+        self._company_id = company.id
+        self.num_shares = num_shares
 
     def __repr__(self):
         return f"ShareEntry(id={self.id!r}, profile_id={self._profile_id!r}, company_id={self._company_id!r}, num_shares={self.num_shares!r})"
