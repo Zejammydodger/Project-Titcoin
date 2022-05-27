@@ -13,12 +13,12 @@ mapper_registry = orm.registry()
 Base = mapper_registry.generate_base()
 
 
-def get_time():
-    return datetime.datetime.utcfromtimestamp(time.time())
-
-
 def format_time(_datetime: datetime.datetime):
     return _datetime.strftime("%Y-%m-%d %H:%M:%S")
+
+
+def get_time():
+    return format_time(datetime.datetime.utcfromtimestamp(time.time()))
 
 
 class Profile(Base):
@@ -36,8 +36,12 @@ class Profile(Base):
         self.id = id
         self.balance = balance
 
-    def change_balance(self, amount):
+    def change_balance(self, amount, time: datetime.datetime = None, tag: str = None):
         self.balance += amount
+
+        session: orm.Session = orm.Session.object_session(self)
+        session.add(BalanceSlice(self, self.balance, time, tag))
+        session.flush()
 
     def __repr__(self):
         return f"Profile(id={self.id!r}, balance={self.balance!r}, companies={', '.join(i.name for i in self.companies)})"
@@ -76,11 +80,11 @@ class BalanceSlice(Base):
 
     profile = orm.relationship("Profile", uselist=False, back_populates="history")
 
-    def __init__(self, profile: Profile, balance: Decimal, time: datetime.datetime = get_time(), tag: str = None):
+    def __init__(self, profile: Profile, balance: Decimal, time: datetime.datetime = None, tag: str = None):
         super().__init__()
         self._profile_id = profile.id
         self.balance = balance
-        self.time = format_time(time)
+        self.time = format_time(time) if time else get_time()
         self.tag = tag
 
     def __repr__(self):
@@ -98,11 +102,11 @@ class WorthSlice(Base):
 
     company = orm.relationship("Company", uselist=False, back_populates="history")
 
-    def __init__(self, company: Company, balance: Decimal, time: datetime.datetime = get_time(), tag: str = None):
+    def __init__(self, company: Company, balance: Decimal, time: datetime.datetime = None, tag: str = None):
         super().__init__()
         self._company_id = company.id
         self.balance = balance
-        self.time = format_time(time)
+        self.time = format_time(time) if time else get_time()
         self.tag = tag
 
     def __repr__(self):
@@ -134,12 +138,13 @@ mapper_registry.metadata.create_all(engine)
 
 
 def get_session():
-    return orm.sessionmaker(bind=engine)()
+    return orm.sessionmaker(bind=engine, autocommit=True).begin()
 
 
 if __name__ == "__main__":
-    print(format_time(get_time()))
     with get_session() as session:
         result: sq.engine.Result = session.execute(sq.select(Profile))
         for row in result:
+            row: tuple[Profile]
+            row[0].change_balance(-50, tag="debug")
             print(row[0])
