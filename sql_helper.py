@@ -102,10 +102,10 @@ class WorthSlice(Base):
 
     company = orm.relationship("Company", uselist=False, back_populates="history")
 
-    def __init__(self, company: Company, balance: Decimal, time: datetime.datetime = None, tag: str = None):
+    def __init__(self, company: Company, worth: Decimal, time: datetime.datetime = None, tag: str = None):
         super().__init__()
         self._company_id = company.id
-        self.balance = balance
+        self.worth = worth
         self.time = format_time(time) if time else get_time()
         self.tag = tag
 
