@@ -104,7 +104,7 @@ class Company(Base):
         return self.worth / self.num_shares
 
     def __repr__(self):
-        return f"Company(id={self.id!r}, name={self.name!r}, worth={self.worth!r})"
+        return f"Company(id={self.id!r}, profile_id={self._profile_id!r}, name={self.name!r}, worth={self.worth!r})"
 
 
 # mapping of profile balance history entry
