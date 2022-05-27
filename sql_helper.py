@@ -62,6 +62,7 @@ class Profile(Base):
     def balance(self, b: Decimal):
         assert b >= 0
 
+        # sets the balance
         self._balance = b
 
         # adds a log into the history
