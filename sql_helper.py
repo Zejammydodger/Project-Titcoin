@@ -55,6 +55,10 @@ class Profile(Base):
         session.flush()
 
     @property
+    def worth(self):
+        return self.balance + sum([share_entry.worth for share_entry in self.share_entries])
+
+    @property
     def balance(self):
         return self._balance
 
@@ -94,6 +98,14 @@ class Company(Base):
         self._profile_id = owner.id
         self.name = name
         self.worth = worth
+
+    @property
+    def num_shares(self) -> int:
+        return sum([share_entry.num_shares for share_entry in self.share_entries])
+
+    @property
+    def share_value(self):
+        return self.worth / self.num_shares
 
     def __repr__(self):
         return f"Company(id={self.id!r}, name={self.name!r}, worth={self.worth!r})"
@@ -168,6 +180,10 @@ class ShareEntry(Base):
         self._profile_id = profile.id
         self._company_id = company.id
         self.num_shares = num_shares
+
+    @property
+    def worth(self):
+        return self.num_shares * self.company.share_value
 
     def __repr__(self):
         return f"ShareEntry(id={self.id!r}, profile_id={self._profile_id!r}, company_id={self._company_id!r}, num_shares={self.num_shares!r})"
