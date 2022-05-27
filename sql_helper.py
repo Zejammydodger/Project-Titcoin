@@ -32,7 +32,7 @@ class Profile(Base):
 
     # relationships
     companies = orm.relationship("Company", back_populates="owner")
-    history = orm.relationship("BalanceSlice", back_populates="profile")
+    _history = orm.relationship("BalanceSlice", back_populates="profile")
     share_entries = orm.relationship("ShareEntry", back_populates="profile")
 
     def __init__(self, id: int, balance: Decimal):
@@ -53,6 +53,10 @@ class Profile(Base):
     @property
     def worth(self):
         return self.balance + sum([share_entry.worth for share_entry in self.share_entries])
+
+    @property
+    def history(self):
+        return sorted(self._history, key=lambda x: x.time.timestamp(), reverse=True)
 
     @property
     def balance(self):
@@ -86,7 +90,7 @@ class Company(Base):
 
     # relationships
     owner = orm.relationship("Profile", uselist=False, back_populates="companies")
-    history = orm.relationship("WorthSlice", uselist=False, back_populates="company")
+    _history = orm.relationship("WorthSlice", uselist=False, back_populates="company")
     share_entries = orm.relationship("ShareEntry", back_populates="company")
 
     def __init__(self, owner: Profile, name: str, worth: Decimal):
@@ -102,6 +106,10 @@ class Company(Base):
     @property
     def share_value(self):
         return self.worth / self.num_shares
+
+    @property
+    def history(self):
+        return sorted(self._history, key=lambda x: x.time.timestamp(), reverse=True)
 
     def __repr__(self):
         return f"Company(id={self.id!r}, profile_id={self._profile_id!r}, name={self.name!r}, worth={self.worth!r})"
@@ -119,7 +127,7 @@ class BalanceSlice(Base):
     tag = sq.Column("tag", sq.Text)
 
     # relationships
-    profile = orm.relationship("Profile", uselist=False, back_populates="history")
+    profile = orm.relationship("Profile", uselist=False, back_populates="_history")
 
     def __init__(self, profile: Profile, balance: Decimal, time: datetime.datetime = None, tag: str = None):
         super().__init__()
@@ -144,7 +152,7 @@ class WorthSlice(Base):
     tag = sq.Column("tag", sq.Text)
 
     # relationships
-    company = orm.relationship("Company", uselist=False, back_populates="history")
+    company = orm.relationship("Company", uselist=False, back_populates="_history")
 
     def __init__(self, company: Company, worth: Decimal, time: datetime.datetime = None, tag: str = None):
         super().__init__()
@@ -194,5 +202,5 @@ if __name__ == "__main__":
         result: sq.engine.Result = session.execute(sq.select(Profile))
         for row in result:
             row: tuple[Profile]
-            row[0].change_balance(-50, tag="debug")
-            print(row[0])
+            #row[0].change_balance(-50, tag="debug")
+            print(row[0].history)
