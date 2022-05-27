@@ -18,12 +18,8 @@ def get_session():
     return orm.sessionmaker(bind=engine, autocommit=True).begin()
 
 
-def format_time(_datetime: datetime.datetime):
-    return _datetime.strftime("%Y-%m-%d %H:%M:%S")
-
-
 def get_time():
-    return format_time(datetime.datetime.utcfromtimestamp(time.time()))
+    return datetime.datetime.utcfromtimestamp(time.time())
 
 
 # mapping of user profiles
@@ -129,7 +125,7 @@ class BalanceSlice(Base):
         super().__init__()
         self._profile_id = profile.id
         self.balance = balance
-        self.time = format_time(time) if time else get_time()
+        self.time = time if time else get_time()
         self.tag = tag
 
     def __repr__(self):
@@ -154,7 +150,7 @@ class WorthSlice(Base):
         super().__init__()
         self._company_id = company.id
         self.worth = worth
-        self.time = format_time(time) if time else get_time()
+        self.time = time if time else get_time()
         self.tag = tag
 
     def __repr__(self):
