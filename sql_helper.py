@@ -54,6 +54,21 @@ class Profile(Base):
         session.add(BalanceSlice(self, self._balance, time, tag))
         session.flush()
 
+    @property
+    def balance(self):
+        return self._balance
+
+    @balance.setter
+    def balance(self, b: Decimal):
+        assert b >= 0
+
+        self._balance = b
+
+        # adds a log into the history
+        session: orm.Session = orm.Session.object_session(self)
+        session.add(BalanceSlice(self, self._balance, datetime.datetime.utcfromtimestamp(time.time()), "override"))
+        session.flush()
+
     def __repr__(self):
         return f"Profile(id={self.id!r}, balance={self._balance!r}, companies={', '.join(i.name for i in self.companies)})"
 
