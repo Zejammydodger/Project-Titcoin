@@ -15,7 +15,7 @@ Base = mapper_registry.generate_base()
 
 # helper functions
 def get_session():
-    return orm.sessionmaker(bind=engine, autocommit=True).begin()
+    return orm.sessionmaker(bind=engine, autoflush=True, autocommit=True).begin()
 
 
 def get_time():
@@ -38,7 +38,7 @@ class Profile(Base):
     def __init__(self, id: int, balance: Decimal):
         super().__init__()
         self.id = id
-        self._balance = balance
+        self.balance = balance
 
     # changes the balance of a user (it supports negative numbers btw)
     def change_balance(self, amount: Decimal, time: datetime.datetime = None, tag: str = None):
@@ -48,7 +48,6 @@ class Profile(Base):
         # adds a log into the history
         session: orm.Session = orm.Session.object_session(self)
         session.add(BalanceSlice(self, self._balance, time, tag))
-        session.flush()
 
     @property
     def worth(self):
@@ -98,6 +97,50 @@ class Company(Base):
         self._profile_id = owner.id
         self.name = name
         self.worth = worth
+
+        session: orm.Session = orm.object_session(self)
+        session.add(ShareEntry(owner, self, 1))
+
+    # creates some shares in the name of the owner - share value should be adjusted as a side effect of more shares being in circulation
+    def create_shares(self, num):
+        owner_shares: ShareEntry = self.get_profile_shares(self.owner)
+        assert owner_shares.num_shares + num > 0
+        owner_shares.num_shares += num
+
+    # moves shares between two profiles, with a bunch of checks to make sure things don't fall apart
+    def transfer_shares(self, num: int, price: Decimal, seller: Profile, buyer: Profile):
+        # quick checks
+        assert price >= 0 and num >= 0
+
+        # get the entries needed
+        seller_shares: ShareEntry = self.get_profile_shares(seller)
+        buyer_shares: ShareEntry = self.get_profile_shares(buyer)
+        total_tc = price * num
+
+        # make sure both parties have entries and the seller has enough shares to sell
+        assert seller_shares is not None and seller_shares.num_shares >= num
+        if buyer_shares is None:
+            session: orm.Session = orm.object_session(self)
+            buyer_shares = ShareEntry(buyer, self, 0)
+            session.add(buyer_shares)
+
+        # make sure the buyer has enough money to buy
+        assert buyer.balance >= total_tc
+
+        # complete transaction
+        seller_shares -= num
+        seller.change_balance(total_tc, tag="share sell")
+
+        buyer_shares += num
+        buyer.change_balance(-1 * total_tc, tag="share buy")
+
+    # gets a share entry given a profile
+    def get_profile_shares(self, profile: Profile):
+        try:
+            index = [share_entry.profile for share_entry in self.share_entries].index(profile)
+        except ValueError:
+            index = None
+        return self.share_entries[index] if index is not None else None
 
     @property
     def num_shares(self) -> int:
@@ -202,5 +245,4 @@ if __name__ == "__main__":
         result: sq.engine.Result = session.execute(sq.select(Profile))
         for row in result:
             row: tuple[Profile]
-            #row[0].change_balance(-50, tag="debug")
-            print(row[0].history)
+            row[0].companies[0].create_shares(10)
