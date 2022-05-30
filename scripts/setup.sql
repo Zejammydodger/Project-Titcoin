@@ -1,42 +1,44 @@
-/* 
-initialize the database if it isnt already initialized
-*/
-CREATE DATABASE IF NOT EXISTS TitCoin;
-USE TitCoin;
-
-CREATE TABLE IF NOT EXISTS Profiles(
-    discordID BIGINT NOT NULL,
-    PRIMARY KEY(discordID)
+create table profiles
+(
+    id bigint not null primary key,
+    balance decimal(14, 2) not null
 );
 
-CREATE TABLE IF NOT EXISTS Companies(
-    CID INT AUTO_INCREMENT,
-    PID BIGINT,
-    FOREIGN KEY(PID) REFERENCES Profiles(discordID), 
-    CompanyName TEXT NOT NULL,
-    PRIMARY KEY(CID)
+create table balancehistory
+(
+    id int auto_increment primary key,
+    profile_id bigint not null,
+    balance decimal(14, 2) not null,
+    time datetime not null,
+    tag text null,
+    constraint balancehistory_ibfk_1 foreign key (profile_id) references profiles (id)
 );
 
-CREATE TABLE IF NOT EXISTS WorthHistory(
-    CID INT,
-    FOREIGN KEY(CID) REFERENCES Companies(CID),
-    created DATETIME NOT NULL,
-    worth FLOAT NOT NULL
+create table companies
+(
+    id int auto_increment primary key,
+    profile_id bigint         null,
+    name       text           not null,
+    worth      decimal(14, 2) not null,
+    constraint companies_ibfk_1 foreign key (profile_id) references profiles (id)
 );
 
-CREATE TABLE IF NOT EXISTS Shares(
-    ShareID INT AUTO_INCREMENT NOT NULL,
-    PID BIGINT,
-    CID INT,
-    FOREIGN KEY(PID) REFERENCES Profiles(discordID),
-    FOREIGN KEY(CID) REFERENCES Companies(CID),
-    percent FLOAT NOT NULL,
-    PRIMARY KEY(ShareID)
+create table shares
+(
+    id int auto_increment primary key,
+    profile_id bigint not null,
+    company_id int    not null,
+    num_shares bigint not null,
+    constraint shares_ibfk_1 foreign key (profile_id) references profiles (id),
+    constraint shares_ibfk_2 foreign key (company_id) references companies (id)
 );
 
-CREATE TABLE IF NOT EXISTS BalanceHistory(
-    PID BIGINT,
-    FOREIGN KEY(PID) REFERENCES Profiles(discordID),
-    balance FLOAT NOT NULL,
-    created DATETIME NOT NULL
+create table worthhistory
+(
+    id int auto_increment primary key,
+    company_id int not null,
+    worth decimal(14, 2) not null,
+    time datetime not null,
+    tag text null,
+    constraint worthhistory_ibfk_1 foreign key (company_id) references companies (id)
 );
