@@ -5,6 +5,7 @@ from extensions import util
 from extensions.perks.perk import Perk
 from Table import Table , BaseColumn , IndexColumn , PercentOfColumn
 from Graph import BasicTextGraph , BasicGraph , AutoUpdateGraph
+import sqlalchemy_helper as sql_h
 
 """
 #discord ui testing imports
@@ -78,6 +79,9 @@ class TitCoin(commands.Cog):
         self.tiddleton: discord.Guild = None
         self.channelsOnCooldown: list[discord.TextChannel] = []
         self.perks = []
+
+        self._get_session = sql_h.get_session       # session factory
+        self._engine = sql_h.engine                 # preconfigured engine
 
         self.connection = initDataBase()
         self.profiles: dict[str: dict | list] = load(self.connection)
