@@ -38,8 +38,7 @@ class Profile(Base):
     def __init__(self, id: int, balance: Decimal):
         super().__init__()
         self.id = id
-        self.balance = balance
-        self._history.append(BalanceSlice(self, 0, tag="init"))
+        self._balance = balance
 
     # changes the balance of a user (it supports negative numbers btw)
     def change_balance(self, amount: Decimal, time: datetime.datetime = None, tag: str = None):
@@ -243,7 +242,4 @@ mapper_registry.metadata.create_all(engine)
 
 if __name__ == "__main__":
     with get_session() as session:
-        result: sq.engine.Result = session.execute(sq.select(Profile))
-        for row in result:
-            row: tuple[Profile]
-            row[0].companies[0].create_shares(10)
+        pass
