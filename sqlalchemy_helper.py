@@ -39,6 +39,7 @@ class Profile(Base):
         super().__init__()
         self.id = id
         self.balance = balance
+        self._history.append(BalanceSlice(self, 0, tag="init"))
 
     # changes the balance of a user (it supports negative numbers btw)
     def change_balance(self, amount: Decimal, time: datetime.datetime = None, tag: str = None):
