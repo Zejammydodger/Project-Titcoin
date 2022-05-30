@@ -44,6 +44,7 @@ channelExclusions = [
 
 MESSAGE_VAL = 1
 VOICE_VAL = 1
+START_BALANCE = 0
 
 ### titcoin values
 
@@ -162,16 +163,25 @@ class TitCoin(commands.Cog):
         for mem in self.tiddleton.members:
             with self.sessionmaker() as session:
                 if mem.id not in [row[0].id for row in session.execute(sq.select(sqlh.Profile))]:
-                    start_balance = 0
-                    profile = sqlh.Profile(id=mem.id, balance=start_balance)
+                    profile = sqlh.Profile(id=mem.id, balance=START_BALANCE)
                     session.add(profile)
 
-                    init_slice = sqlh.BalanceSlice(profile, start_balance, tag="init")
+                    init_slice = sqlh.BalanceSlice(profile, START_BALANCE, tag="init")
                     session.add(init_slice)
                 # print(f"profile added: {p}\n\t{p.discordID}\n\t{p.currentBal}\n")
         
         # self.bot.loop.create_task(self.randomAward()) #ill add this back at some point
-                    
+
+    @commands.Cog.listener()
+    async def on_member_join(self, member: discord.Member):
+        print(f"[{member.id}]['{member.display_name}'] joined, adding to system")
+        with self.sessionmaker() as session:
+            profile = sqlh.Profile(id=member.id, balance=START_BALANCE)
+            session.add(profile)
+
+            init_slice = sqlh.BalanceSlice(profile, START_BALANCE, tag="init")
+            session.add(init_slice)
+
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
         if message.author.id in self.cooldown:
@@ -182,9 +192,7 @@ class TitCoin(commands.Cog):
             try:
                 self.profiles["profiles"][message.author.id].addBal(MESSAGE_VAL)
             except KeyError:
-                print(f"[{message.author.id}]['{message.author.display_name}'] not found, adding to system")
-                P = Profile(blankHistory(balance=MESSAGE_VAL), message.author.id)
-                self.profiles["profiles"][message.author.id] = P
+                print(f"[{message.author.id}]['{message.author.display_name}'] not found")
                 
     @commands.command()
     async def titcoin(self, ctx: commands.Context, user: discord.Member = None):
