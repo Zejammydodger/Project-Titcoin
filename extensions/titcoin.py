@@ -6,6 +6,8 @@ from extensions.perks.perk import Perk
 from Table import Table , BaseColumn , IndexColumn , PercentOfColumn
 from Graph import BasicTextGraph , BasicGraph , AutoUpdateGraph
 import sqlalchemy_helper as sqlh
+import sqlalchemy as sq
+import sqlalchemy.orm as orm
 
 """
 #discord ui testing imports
@@ -81,8 +83,8 @@ class TitCoin(commands.Cog):
         self.channels_on_cooldown: list[discord.TextChannel] = []
         self.perks = []
 
-        self._get_session = sqlh.get_session       # session factory
-        self._engine = sqlh.engine                 # preconfigured engine
+        self.session: orm.Session = sqlh.get_session()              # session
+        self._engine = sqlh.engine                                  # preconfigured engine
 
         self.connection = initDataBase()
         self.profiles: dict[str: dict | list] = load(self.connection)
