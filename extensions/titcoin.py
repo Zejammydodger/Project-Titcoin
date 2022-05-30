@@ -147,6 +147,7 @@ class TitCoin(commands.Cog):
                     with self.sessionmaker() as session:
                         profile: sqlh.Profile = self.get_profile(session, member)
                         profile.change_balance(amount=VOICE_VAL * num_connected, tag="vc_reward")
+                    print(f"[{member.id}]['{member.display_name}'] was rewarded for vc")
 
     @commands.Cog.listener()
     async def on_ready(self):
@@ -160,14 +161,17 @@ class TitCoin(commands.Cog):
         assert self.tiddleton is not None, "Bot not in tiddleton"
 
         # make sure all members are in the database
-        for mem in self.tiddleton.members:
+        for member in self.tiddleton.members:
             with self.sessionmaker() as session:
-                if mem.id not in [row[0].id for row in session.execute(sq.select(sqlh.Profile))]:
-                    profile = sqlh.Profile(id=mem.id, balance=START_BALANCE)
+                if member.id not in [row[0].id for row in session.execute(sq.select(sqlh.Profile))]:
+                    print(f"[{member.id}]['{member.display_name}'] not found, adding to system")
+
+                    profile = sqlh.Profile(id=member.id, balance=START_BALANCE)
                     session.add(profile)
 
                     init_slice = sqlh.BalanceSlice(profile, START_BALANCE, tag="init")
                     session.add(init_slice)
+
                 # print(f"profile added: {p}\n\t{p.discordID}\n\t{p.currentBal}\n")
         
         # self.bot.loop.create_task(self.randomAward()) #ill add this back at some point
@@ -192,6 +196,7 @@ class TitCoin(commands.Cog):
             try:
                 with self.sessionmaker() as session:
                     self.get_profile(session, message.author).change_balance(MESSAGE_VAL, tag="message")
+                print(f"[{message.author.id}]['{message.author.display_name}'] was rewarded for message")
             except NotImplementedError:
                 print(f"[{message.author.id}]['{message.author.display_name}'] not found")
                 
