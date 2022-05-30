@@ -83,7 +83,7 @@ class TitCoin(commands.Cog):
         self.channels_on_cooldown: list[discord.TextChannel] = []
         self.perks = []
 
-        self.session: orm.Session = sqlh.get_session()              # session
+        self.sessionmaker = sqlh.get_session                        # sessionmaker
         self._engine = sqlh.engine                                  # preconfigured engine
 
         self.cooldown: list[int] = []  # a list of userIDs that represents users on cooldown
@@ -93,9 +93,10 @@ class TitCoin(commands.Cog):
         print("Titcoin innit, profiles loaded")
 
     def get_profile(self, member: discord.Member):
-        for row in self.session.execute(sq.select(sqlh.Profile).where(sqlh.Profile.id == member.id)):
-            row[0]: sqlh.Profile
-            return row[0]
+        with self.sessionmaker() as session:
+            for row in session.execute(sq.select(sqlh.Profile).where(sqlh.Profile.id == member.id)):
+                row[0]: sqlh.Profile
+                return row[0]
 
     async def random_award(self):
         while True:
@@ -151,14 +152,22 @@ class TitCoin(commands.Cog):
         print("flag")
         # tiddleton
         self.tiddleton = self.bot.get_guild(693537199500689439)
+        if self.tiddleton is None:      # the tiddleton bot test site
+            self.tiddleton = self.bot.get_guild(979099481591132200)
         if self.tiddleton is None:                  # it took me an embarrassing amount of time to realize the bot looks for tiddleton specifically. Anyways this is my test server
             self.tiddleton = self.bot.get_guild(969731141890363402)
         assert self.tiddleton is not None, "Bot not in tiddleton"
+
+        # make sure all members are in the database
         for mem in self.tiddleton.members:
-            if mem.id not in self.profiles["profiles"].keys():
-                p = Profile(blankHistory(), mem.id)
-                self.profiles["profiles"][mem.id] = p
-                
+            with self.sessionmaker() as session:
+                if mem.id not in [row[0].id for row in session.execute(sq.select(sqlh.Profile))]:
+                    start_balance = 0
+                    profile = sqlh.Profile(id=mem.id, balance=start_balance)
+                    session.add(profile)
+
+                    init_slice = sqlh.BalanceSlice(profile, start_balance, tag="init")
+                    session.add(init_slice)
                 # print(f"profile added: {p}\n\t{p.discordID}\n\t{p.currentBal}\n")
         
         # self.bot.loop.create_task(self.randomAward()) #ill add this back at some point
