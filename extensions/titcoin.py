@@ -81,8 +81,8 @@ class TitCoin(commands.Cog):
         self.channels_on_cooldown: list[discord.TextChannel] = []
         self.perks = []
 
-        self._get_session = sql_h.get_session       # session factory
-        self._engine = sql_h.engine                 # preconfigured engine
+        self._get_session = sqlh.get_session       # session factory
+        self._engine = sqlh.engine                 # preconfigured engine
 
         self.connection = initDataBase()
         self.profiles: dict[str: dict | list] = load(self.connection)
