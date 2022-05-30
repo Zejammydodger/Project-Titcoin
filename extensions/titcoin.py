@@ -288,14 +288,6 @@ class TitCoin(commands.Cog):
             perk.extendEmbed(embed)
         await ctx.send(embed=embed)
             
-    @commands.command()
-    async def forceSave(self , ctx):
-        await ctx.send("forceing a save....")
-        t1 = time.time()
-        save(self.connection , self.profiles)
-        t2 = time.time()
-        await ctx.send(f"saved in `[{round(t2 - t1 , 2)} seconds]`")
-            
     ### cog unload
     def cog_unload(self):
         print("unloading...")
