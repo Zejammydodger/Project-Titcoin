@@ -5,7 +5,7 @@ from extensions import util
 from extensions.perks.perk import Perk
 from Table import Table , BaseColumn , IndexColumn , PercentOfColumn
 from Graph import BasicTextGraph , BasicGraph , AutoUpdateGraph
-import sqlalchemy_helper as sql_h
+import sqlalchemy_helper as sqlh
 
 """
 #discord ui testing imports
