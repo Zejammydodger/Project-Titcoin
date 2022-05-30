@@ -12,16 +12,16 @@ class AdminZoo(Perk):
     def __init__(self, bot: commands.Bot, titcoin: titcoin.TitCoin, basePrice=50):
         super().__init__(bot, titcoin, basePrice)
         self.description = "allows you to talk in admin zoo for 3 minutes, make em count"
-        self.registerCommand(self.letMeIn)
+        self.register_command(self.letMeIn)
 
     @commands.command()
     async def letMeIn(self, ctx: commands.Context):
-        aZoo = ctx.guild.get_channel(954805755624697916)
-        overWrite = discord.PermissionOverwrite()
-        overWrite.send_messages = True
-        await aZoo.set_permissions(ctx.author, overwrite=overWrite)
+        admin_zoo_channel = ctx.guild.get_channel(954805755624697916)
+        over_write = discord.PermissionOverwrite()
+        over_write.send_messages = True
+        await admin_zoo_channel.set_permissions(ctx.author, overwrite=over_write)
         await ctx.send("you're in go go go go")
         await asyncio.sleep(60)
-        overWrite.send_messages = False
-        await aZoo.set_permissions(ctx.author, overwrite=overWrite)
+        over_write.send_messages = False
+        await admin_zoo_channel.set_permissions(ctx.author, overwrite=over_write)
         await ctx.send("times up")

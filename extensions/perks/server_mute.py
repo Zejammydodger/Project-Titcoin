@@ -12,12 +12,12 @@ class ServerMute(Perk):
     def __init__(self, bot: commands.Bot, titcoin: titcoin.TitCoin, basePrice=75):
         super().__init__(bot, titcoin, basePrice)
         self.description = "server mute someone for 30 seconds"
-        self.registerCommand(self.mute)
-        self.muteRoleID = 799600022936223755
+        self.register_command(self.mute)
+        self.mute_role_id = 799600022936223755
 
     @commands.command()
     async def mute(self, ctx: commands.Context, friend: discord.Member):
-        muteRole = ctx.guild.get_role(self.muteRoleID)
-        await friend.add_roles(muteRole)
+        mute_role = ctx.guild.get_role(self.mute_role_id)
+        await friend.add_roles(mute_role)
         await asyncio.sleep(30)
-        await friend.remove_roles(muteRole)
+        await friend.remove_roles(mute_role)

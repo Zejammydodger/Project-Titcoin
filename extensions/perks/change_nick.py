@@ -12,10 +12,10 @@ class ChangeNick(Perk):
     def __init__(self, bot: commands.Bot, titcoin: titcoin.TitCoin, basePrice=15):
         super().__init__(bot, titcoin, basePrice)
         self.description = "Change someone's nickname for 10 minutes, the change will revert"
-        self.registerCommand(self.changeNick)
+        self.register_command(self.change_nick)
 
     @commands.command()
-    async def changeNick(self, ctx: commands.Context, friend: discord.Member, nickname: str):
+    async def change_nick(self, ctx: commands.Context, friend: discord.Member, nickname: str):
         current = friend.nick
         await friend.edit(nick=nickname)
         await asyncio.sleep(60 * 10)  # 10 minutes

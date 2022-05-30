@@ -10,15 +10,15 @@ titcoin_cog: titcoin.TitCoin
 
 
 class StartCompany(Perk):
-    def __init__(self, bot: commands.Bot, titcoin: titcoin.TitCoin, basePrice=1):
-        super().__init__(bot, titcoin, basePrice)
-        self.registerCommand(self.startCompany)
+    def __init__(self, bot: commands.Bot, titcoin: titcoin.TitCoin, base_price=1):
+        super().__init__(bot, titcoin, base_price)
+        self.register_command(self.start_company)
         self.description = "Start your own company!"
         global titcoin_cog    # best I could do, don't judge me   >:|
         titcoin_cog = self.titcoin
 
     @staticmethod
-    def hasNoCompany():
+    def has_no_company():
         async def check(ctx: commands.Context):
             assert titcoin_cog is not None , "cog hasnt loaded yet"
             P = titcoin_cog.profiles["profiles"][ctx.author.id]
@@ -31,18 +31,18 @@ class StartCompany(Perk):
         return commands.check(check)
 
     @commands.command()
-    @hasNoCompany()
-    async def startCompany(self, ctx: commands.Context):
+    @has_no_company()
+    async def start_company(self, ctx: commands.Context):
         # starts a dialog sequence
         # information needed:
         # name
         # how much extra if any they would like to invest in their own company
-        def checkFactory(auth: discord.Member, lambdaFunc=None):
-            if lambdaFunc is None:
-                lambdaFunc = lambda x: True
+        def check_factory(auth: discord.Member, lambda_func=None):
+            if lambda_func is None:
+                lambda_func = lambda x: True
 
             def check(message: discord.Message) -> bool:
-                return message.author == auth and lambdaFunc(message)
+                return message.author == auth and lambda_func(message)
 
             return check
 
@@ -51,7 +51,7 @@ class StartCompany(Perk):
         emb = discord.Embed(title="Company Name", description="what should the company be called")
         await ctx.send(embed=emb)
         while True:
-            message: discord.Message = await self.bot.wait_for("message", check=checkFactory(ctx.author))
+            message: discord.Message = await self.bot.wait_for("message", check=check_factory(ctx.author))
             if message is not None:
                 break
             else:
@@ -64,7 +64,7 @@ class StartCompany(Perk):
         await ctx.send(embed=emb)
 
         while True:
-            message: discord.Message = await self.bot.wait_for("message", check=checkFactory(ctx.author, lambda x: x.content.isdigit()))
+            message: discord.Message = await self.bot.wait_for("message", check=check_factory(ctx.author, lambda x: x.content.isdigit()))
             if message is None:
                 await ctx.send("you failed to respond in time, try again")
             else:

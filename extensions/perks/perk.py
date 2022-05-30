@@ -17,7 +17,7 @@ class Perk(commands.Cog):
     def __init__(self, bot: commands.Bot, titcoin: titcoin.TitCoin, basePrice=10):
         super().__init__()
         self.description = "N/A"            # implement a description for your perk
-        self.basePrice: int = basePrice
+        self.base_price: int = basePrice
         self.currentPrice = basePrice
         self.modifyVal = 0.1
         self.bot = bot
@@ -30,48 +30,48 @@ class Perk(commands.Cog):
     @tasks.loop(hours=1)
     async def deflate(self):
         # reduces the current price down to base price
-        if math.floor(self.currentPrice - (self.currentPrice * self.modifyVal)) <= self.basePrice:
-            self.currentPrice = self.basePrice
+        if math.floor(self.currentPrice - (self.currentPrice * self.modifyVal)) <= self.base_price:
+            self.currentPrice = self.base_price
         else:
             self.currentPrice -= (self.currentPrice * self.modifyVal)
 
-    def hasFunds(self):
-        async def memHasFundsCheck(ctx: commands.Context):
+    def has_funds(self):
+        async def mem_has_funds_check(ctx: commands.Context):
             # stops the command based on weather the member has enough tc to use this command
             P = self.titcoin.profiles["profiles"][ctx.author.id]
             return P.currentBal >= self.currentPrice
 
-        return memHasFundsCheck
+        return mem_has_funds_check
 
     def confirmed(self):
         # prompts the user to confirm if they want to spend that much
         yes = "✅"
         no = "❌"
 
-        async def confirmCheck(ctx: commands.Context):
-            def sameAuth(reaction: discord.Reaction, user):
+        async def confirm_check(ctx: commands.Context):
+            def same_auth(reaction: discord.Reaction, user):
                 return ctx.author == user and str(reaction.emoji) in [yes, no]
 
             msg: discord.Message = await ctx.send(embed=discord.Embed(title="u sure homie?",
                                                                       description=f"You are about to spend `[{round(self.currentPrice, 2)}tc]`"))
             await msg.add_reaction(yes)  # yes
             await msg.add_reaction(no)  # no
-            reaction, user = await self.bot.wait_for("reaction_add", check=sameAuth)
+            reaction, user = await self.bot.wait_for("reaction_add", check=same_auth)
             if str(reaction.emoji) == yes:
                 return True
             else:
                 raise Denied
 
-        return confirmCheck
+        return confirm_check
 
-    async def modifyPrice(self, _, ctx: commands.Context):
+    async def modify_price(self, _, ctx: commands.Context):
         # modifies the price of the command
         # god i hope this only goes off if the actual command is run ;-;
         self.currentPrice += self.currentPrice * 0.1
         P = self.titcoin.profiles["profiles"][ctx.author.id]
         P.addBal(-self.currentPrice)
 
-    async def checkFail(self, _, ctx, error):
+    async def check_fail(self, _, ctx, error):
         # print(f"_ : {_}  ctx : {ctx}   err : {error}")
         if isinstance(error, commands.errors.CheckFailure):
             await ctx.send(embed=discord.Embed(title="no titcoin?",
@@ -85,15 +85,15 @@ class Perk(commands.Cog):
             await ctx.send(f"oop there was an error, ping neo\n\n```{error}```")
             traceback.print_exc()
 
-    def registerCommand(self, command: commands.Command):
-        command.after_invoke(self.modifyPrice)
-        command.error(self.checkFail)
-        command.add_check(self.hasFunds())
+    def register_command(self, command: commands.Command):
+        command.after_invoke(self.modify_price)
+        command.error(self.check_fail)
+        command.add_check(self.has_funds())
         command.add_check(self.confirmed())
         self.commands.append(command)
 
-    def extendEmbed(self, embed: discord.Embed):
-        commandNames = [f"${c.name}" for c in self.commands]
-        commands = "\n\t".join(commandNames)
+    def extend_embed(self, embed: discord.Embed):
+        command_names = [f"${c.name}" for c in self.commands]
+        commands = "\n\t".join(command_names)
         embed.add_field(name=self.__class__.__name__,
-                        value=f"```Description:\n\t{self.description}\n\nPrice:\n\tbase : [{self.basePrice}tc]\n\tcurrent : [{self.currentPrice}tc]\n\nUse:\n\t{commands}```")
+                        value=f"```Description:\n\t{self.description}\n\nPrice:\n\tbase : [{self.base_price}tc]\n\tcurrent : [{self.currentPrice}tc]\n\nUse:\n\t{commands}```")

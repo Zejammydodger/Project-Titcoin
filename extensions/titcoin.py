@@ -72,12 +72,13 @@ class test(commands.Cog):
         #tests the auto graph functionality
         pass 
 
+
 class TitCoin(commands.Cog):
     def __init__(self, bot) -> None:
         super().__init__()
         self.bot: commands.Bot = bot
         self.tiddleton: discord.Guild = None
-        self.channelsOnCooldown: list[discord.TextChannel] = []
+        self.channels_on_cooldown: list[discord.TextChannel] = []
         self.perks = []
 
         self._get_session = sql_h.get_session       # session factory
@@ -89,37 +90,37 @@ class TitCoin(commands.Cog):
         self.cooldown: list[int] = []  # a list of userIDs that represents users on cooldown
         self.cooldownTime = 60
 
-        self.VCcheck.start()    # starting tasks
+        self.vc_check.start()    # starting tasks
         print("Titcoin innit, profiles loaded")
 
-    async def randomAward(self):
+    async def random_award(self):
         while True:
             # place a reward for 25tc in a channel that hasn't been used for at least 5 minutes every 1 - 3 hours
-            possibleChannels = []
+            possible_channels = []
             for chan in self.tiddleton.text_channels:
                 chan: discord.TextChannel
                 if chan.id in channelExclusions:
                     continue
-                mostRecent: list[discord.Message] = await chan.history(limit=1).flatten()
-                if len(mostRecent) == 0:
-                    possibleChannels.append(chan)
+                most_recent: list[discord.Message] = await chan.history(limit=1).flatten()
+                if len(most_recent) == 0:
+                    possible_channels.append(chan)
                     continue
-                mostRecent: discord.Message = mostRecent[0]
-                timeSent = mostRecent.created_at
+                most_recent: discord.Message = most_recent[0]
+                time_sent = most_recent.created_at
                 now = datetime.datetime.utcnow()
                 now - datetime.timedelta(minutes=5)
-                if timeSent < now:
-                    possibleChannels.append(chan)
+                if time_sent < now:
+                    possible_channels.append(chan)
                     
-            chosenChannel = random.choice(possibleChannels)
+            chosen_channel = random.choice(possible_channels)
             
-            def messageCheck(message: discord.Message):
-                return message.channel == chosenChannel
+            def message_check(message: discord.Message):
+                return message.channel == chosen_channel
             # send the reward message
             ammount = random.randint(25, 69)
             e = discord.Embed(title="QUICK!", description=f"the first person to say something in this channel will receive `[{ammount}tc]`\n\n**you have 30 seconds**")
-            msg: discord.Message = await chosenChannel.send(embed=e)
-            message: discord.Message = await self.bot.wait_for("message", check=messageCheck)
+            msg: discord.Message = await chosen_channel.send(embed=e)
+            message: discord.Message = await self.bot.wait_for("message", check=message_check)
             if message is not None:
                 P = self.profiles["profiles"][message.author.id]
                 P.addBal(ammount)
@@ -128,18 +129,18 @@ class TitCoin(commands.Cog):
             await asyncio.sleep(60 * 60 * random.randint(1, 3))
             
     @tasks.loop(minutes=1)
-    async def VCcheck(self):
+    async def vc_check(self):
         # awards all users currently sat in a VC voiceVal*[number of people in that vc]tc per minute
         if self.tiddleton is None:
             return
         for VC in self.tiddleton.voice_channels:
             VC: discord.VoiceChannel
-            numConnected = len(VC.members)
-            if numConnected > 0:
+            num_connected = len(VC.members)
+            if num_connected > 0:
                 for mem in VC.members:
                     mem: discord.Member
                     P = self.profiles["profiles"][mem.id]
-                    P.addBal(voiceVal * numConnected) 
+                    P.addBal(voiceVal * num_connected)
 
     @commands.Cog.listener()
     async def on_ready(self):
@@ -202,7 +203,7 @@ class TitCoin(commands.Cog):
         await ctx.send(embed=embed)
                 
     @commands.command()
-    async def sellTo(self, ctx: commands.Context, user2: discord.Member):
+    async def sell_to(self, ctx: commands.Context, user2: discord.Member):
         # WIP
         
         # trade tc between members
@@ -219,17 +220,17 @@ class TitCoin(commands.Cog):
         #       wait for other user to accept decline or counter offer 
         #   loop counter offer till accept or decline
         
-        def checkAuthor(auth: discord.Member):
+        def check_author(auth: discord.Member):
             def check(message: discord.Message) -> bool:
                 return message.author == auth
             return check
         
-        def checkAuthorAndInt(auth: discord.Member):
+        def check_author_and_int(auth: discord.Member):
             def check(message: discord.Message) -> bool:
                 return message.author == auth and str(message.content).isnumeric()
             return check
         
-        def checkAuthorAndresponse(auth: discord.Member):
+        def check_author_and_response(auth: discord.Member):
             def check(message: discord.Message) -> bool:
                 return message.author == auth and str(message.content).lower() in ["accept", "decline"]
             return check
@@ -241,21 +242,21 @@ class TitCoin(commands.Cog):
         profile2: Profile = self.profiles["profiles"][user2.id]
 
         await dialog("What are you selling?")
-        message: discord.Message = await self.bot.wait_for("message", check=checkAuthor(user1), timeout=60)
+        message: discord.Message = await self.bot.wait_for("message", check=check_author(user1), timeout=60)
         contents = message.content
         
         await dialog(f"How much do you want for [{contents}]")
-        messageAmount: discord.Message = await self.bot.wait_for("message", check=checkAuthorAndInt(user1), timeout=60)
-        amount: int = int(messageAmount.content)
+        message_amount: discord.Message = await self.bot.wait_for("message", check=check_author_and_int(user1), timeout=60)
+        amount: int = int(message_amount.content)
         
         while profile2.currentBal < amount:
             await dialog(f"[{user2.display_name}] does not possess the funds to make this trade, please choose an amount less than or equal to [{profile2.currentBal}]")
             await dialog(f"How much do you want for [{contents}]")
-            messageAmount: discord.Message = await self.bot.wait_for("message", check=checkAuthorAndInt(user1), timeout=60)
-            amount: int = int(messageAmount.content)
+            message_amount: discord.Message = await self.bot.wait_for("message", check=check_author_and_int(user1), timeout=60)
+            amount: int = int(message_amount.content)
             
         await dialog(f"[{user2.display_name}] do you accept or decline?\n__type 'accept' or 'decline'__")
-        response: discord.Message = await self.bot.wait_for("message", check=checkAuthorAndresponse(user2), timeout=60)
+        response: discord.Message = await self.bot.wait_for("message", check=check_author_and_response(user2), timeout=60)
         if response.content == "accept":
             # trade accepted
             profile2.addBal(-amount)
@@ -267,17 +268,17 @@ class TitCoin(commands.Cog):
             await ctx.send(embed=discord.Embed(title="Trade declined", color=0xff0000))
         
     @commands.command()
-    async def wealthDist(self, ctx: commands.Context, top: int = 15, granularity: int = 10):
+    async def wealth_dist(self, ctx: commands.Context, top: int = 15, granularity: int = 10):
         # produces a leaderboard type thing but its a percentage distribution of wealth, ie #1 == 100% and #2 is some percentage of #1
         profs = sorted(self.profiles["profiles"].values(), key=lambda x: x.currentBal, reverse=True)[:top]
-        maxBal = profs[0].currentBal
-        index = IndexColumn(startsAt=1 , padding=0)
-        name = BaseColumn("Name" , padding=0)
-        percOfMax = PercentOfColumn("relative wealth to #1" , maxBal , granularity=granularity , padding=0)
-        table = Table([index , name , percOfMax])
+        max_bal = profs[0].currentBal
+        index = IndexColumn(startsAt=1, padding=0)
+        name = BaseColumn("Name", padding=0)
+        percent_of_max = PercentOfColumn("relative wealth to #1", max_bal, granularity=granularity, padding=0)
+        table = Table([index, name, percent_of_max])
         for prof in profs:
             user: discord.Member = ctx.guild.get_member(prof.discordID)
-            table.addRow(None , user.display_name if user is not None else "[unkown user]" , math.floor(prof.currentBal))
+            table.addRow(None, user.display_name if user is not None else "[unkown user]", math.floor(prof.currentBal))
         await ctx.send(embed=discord.Embed(title=f"distribution of wealth in tiddleton", description=f"```{str(table)}```"))
 
     @commands.command()
@@ -285,7 +286,7 @@ class TitCoin(commands.Cog):
         embed = discord.Embed(title="Shop")
         for perk in self.perks:
             perk: Perk
-            perk.extendEmbed(embed)
+            perk.extend_embed(embed)
         await ctx.send(embed=embed)
             
     ### cog unload
