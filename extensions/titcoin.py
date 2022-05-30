@@ -142,10 +142,11 @@ class TitCoin(commands.Cog):
             VC: discord.VoiceChannel
             num_connected = len(VC.members)
             if num_connected > 0:
-                for mem in VC.members:
-                    mem: discord.Member
-                    profile: sqlh.Profile = self.get_profile(mem)
-                    profile.change_balance(amount=VOICE_VAL * num_connected, tag="vc_reward")
+                for member in VC.members:
+                    member: discord.Member
+                    with self.sessionmaker() as session:
+                        profile: sqlh.Profile = self.get_profile(session, member)
+                        profile.change_balance(amount=VOICE_VAL * num_connected, tag="vc_reward")
 
     @commands.Cog.listener()
     async def on_ready(self):
