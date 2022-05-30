@@ -88,7 +88,7 @@ class TitCoin(commands.Cog):
         self._engine = sqlh.engine                                  # preconfigured engine
 
         self.cooldown: list[int] = []  # a list of userIDs that represents users on cooldown
-        self.cooldownTime = 60
+        self.cooldownTime = 5
 
         self.vc_check.start()    # starting tasks
         print("Titcoin innit, profiles loaded")
