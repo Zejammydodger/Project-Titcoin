@@ -86,9 +86,6 @@ class TitCoin(commands.Cog):
         self.session: orm.Session = sqlh.get_session()              # session
         self._engine = sqlh.engine                                  # preconfigured engine
 
-        self.connection = initDataBase()
-        self.profiles: dict[str: dict | list] = load(self.connection)
-
         self.cooldown: list[int] = []  # a list of userIDs that represents users on cooldown
         self.cooldownTime = 60
 
