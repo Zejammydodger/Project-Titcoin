@@ -93,11 +93,10 @@ class TitCoin(commands.Cog):
         self.vc_check.start()    # starting tasks
         print("Titcoin innit, profiles loaded")
 
-    def get_profile(self, member: discord.Member):
-        with self.sessionmaker() as session:
-            for row in session.execute(sq.select(sqlh.Profile).where(sqlh.Profile.id == member.id)):
-                row[0]: sqlh.Profile
-                return row[0]
+    def get_profile(self, session, member: discord.Member) -> sqlh.Profile:
+        for row in session.execute(sq.select(sqlh.Profile).where(sqlh.Profile.id == member.id)):
+            row[0]: sqlh.Profile
+            return row[0]
 
     async def random_award(self):
         while True:
@@ -190,8 +189,9 @@ class TitCoin(commands.Cog):
         else:
             asyncio.create_task(util.cooldownFunc(message.author.id, self.cooldownTime, self.cooldown))
             try:
-                self.profiles["profiles"][message.author.id].addBal(MESSAGE_VAL)
-            except KeyError:
+                with self.sessionmaker() as session:
+                    self.get_profile(session, message.author).change_balance(MESSAGE_VAL, tag="message")
+            except NotImplementedError:
                 print(f"[{message.author.id}]['{message.author.display_name}'] not found")
                 
     @commands.command()
