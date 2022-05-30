@@ -42,8 +42,8 @@ channelExclusions = [
 
 ### titcoin values
 
-messageVal = 1
-voiceVal = 1
+MESSAGE_VAL = 1
+VOICE_VAL = 1
 
 ### titcoin values
 
@@ -95,6 +95,11 @@ class TitCoin(commands.Cog):
         self.vc_check.start()    # starting tasks
         print("Titcoin innit, profiles loaded")
 
+    def get_profile(self, member: discord.Member):
+        for row in self.session.execute(sq.select(sqlh.Profile).where(sqlh.Profile.id == member.id)):
+            row[0]: sqlh.Profile
+            return row[0]
+
     async def random_award(self):
         while True:
             # place a reward for 25tc in a channel that hasn't been used for at least 5 minutes every 1 - 3 hours
@@ -141,8 +146,8 @@ class TitCoin(commands.Cog):
             if num_connected > 0:
                 for mem in VC.members:
                     mem: discord.Member
-                    P = self.profiles["profiles"][mem.id]
-                    P.addBal(voiceVal * num_connected)
+                    profile: sqlh.Profile = self.get_profile(mem)
+                    profile.change_balance(amount=VOICE_VAL * num_connected, tag="vc_reward")
 
     @commands.Cog.listener()
     async def on_ready(self):
@@ -169,10 +174,10 @@ class TitCoin(commands.Cog):
         else:
             asyncio.create_task(util.cooldownFunc(message.author.id, self.cooldownTime, self.cooldown))
             try:
-                self.profiles["profiles"][message.author.id].addBal(messageVal)
+                self.profiles["profiles"][message.author.id].addBal(MESSAGE_VAL)
             except KeyError:
                 print(f"[{message.author.id}]['{message.author.display_name}'] not found, adding to system")
-                P = Profile(blankHistory(balance=messageVal), message.author.id)
+                P = Profile(blankHistory(balance=MESSAGE_VAL), message.author.id)
                 self.profiles["profiles"][message.author.id] = P
                 
     @commands.command()
