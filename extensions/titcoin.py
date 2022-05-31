@@ -84,7 +84,7 @@ class TitCoin(commands.Cog):
         self.channels_on_cooldown: list[discord.TextChannel] = []
         self.perks = []
 
-        self.sessionmaker = sqlh.get_session                        # sessionmaker
+        self.sessionmaker = sqlh.generate_session                        # sessionmaker
         self._engine = sqlh.engine                                  # preconfigured engine
 
         self.cooldown: list[int] = []  # a list of userIDs that represents users on cooldown
@@ -168,9 +168,7 @@ class TitCoin(commands.Cog):
 
                     profile = sqlh.Profile(id=member.id, balance=START_BALANCE)
                     session.add(profile)
-
-                    init_slice = sqlh.BalanceSlice(profile, START_BALANCE, tag="init")
-                    session.add(init_slice)
+                    profile.initialize()
 
                 # print(f"profile added: {p}\n\t{p.discordID}\n\t{p.currentBal}\n")
         
@@ -182,9 +180,7 @@ class TitCoin(commands.Cog):
         with self.sessionmaker() as session:
             profile = sqlh.Profile(id=member.id, balance=START_BALANCE)
             session.add(profile)
-
-            init_slice = sqlh.BalanceSlice(profile, START_BALANCE, tag="init")
-            session.add(init_slice)
+            profile.initialize()
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):

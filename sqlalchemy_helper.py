@@ -14,7 +14,7 @@ Base = mapper_registry.generate_base()
 
 
 # helper functions
-def get_session():
+def generate_session():
     return orm.sessionmaker(bind=engine, autoflush=True, autocommit=True).begin()
 
 
@@ -22,8 +22,15 @@ def get_time():
     return datetime.datetime.utcfromtimestamp(time.time())
 
 
+# common methods superclass
+class GeneralRow:
+    @property
+    def session(self) -> orm.Session:
+        return orm.Session.object_session(self)
+
+
 # mapping of user profiles
-class Profile(Base):
+class Profile(GeneralRow, Base):
     __tablename__ = "profiles"
 
     # columns
@@ -40,18 +47,25 @@ class Profile(Base):
         self.id = id
         self._balance = balance
 
+    # only to be called AFTER the object is added to a session
+    def initialize(self):
+        self.session.add(BalanceSlice(self, self.balance, tag="init"))
+
     # changes the balance of a user (it supports negative numbers btw)
     def change_balance(self, amount: Decimal, time: datetime.datetime = None, tag: str = None):
         # sets the balance
         self._balance += amount
 
         # adds a log into the history
-        session: orm.Session = orm.Session.object_session(self)
-        session.add(BalanceSlice(self, self._balance, time, tag))
+        self.session.add(BalanceSlice(self, self._balance, time, tag))
 
     @property
     def worth(self):
         return self.balance + sum([share_entry.worth for share_entry in self.share_entries])
+
+    @property
+    def is_richest(self):
+        pass
 
     @property
     def history(self):
@@ -69,16 +83,14 @@ class Profile(Base):
         self._balance = b
 
         # adds a log into the history
-        session: orm.Session = orm.Session.object_session(self)
-        session.add(BalanceSlice(self, self._balance, datetime.datetime.utcfromtimestamp(time.time()), "override"))
-        session.flush()
+        self.session.add(BalanceSlice(self, self._balance, datetime.datetime.utcfromtimestamp(time.time()), "override"))
 
     def __repr__(self):
         return f"Profile(id={self.id!r}, balance={self._balance!r}, companies={', '.join(i.name for i in self.companies)})"
 
 
 # mapping of companies
-class Company(Base):
+class Company(GeneralRow, Base):
     __tablename__ = "companies"
 
     # columns
@@ -98,8 +110,9 @@ class Company(Base):
         self.name = name
         self.worth = worth
 
-        session: orm.Session = orm.object_session(self)
-        session.add(ShareEntry(owner, self, 1))
+    # only to be called AFTER the object is added to a session
+    def initialize(self):
+        self.session.add(ShareEntry(self.owner, self, 1))
 
     # creates some shares in the name of the owner - share value should be adjusted as a side effect of more shares being in circulation
     def create_shares(self, num):
@@ -159,7 +172,7 @@ class Company(Base):
 
 
 # mapping of profile balance history entry
-class BalanceSlice(Base):
+class BalanceSlice(GeneralRow, Base):
     __tablename__ = "balancehistory"
 
     # columns
@@ -184,7 +197,7 @@ class BalanceSlice(Base):
 
 
 # mapping of company worth history entry
-class WorthSlice(Base):
+class WorthSlice(GeneralRow, Base):
     __tablename__ = "worthhistory"
 
     # columns
@@ -209,7 +222,7 @@ class WorthSlice(Base):
 
 
 # mapping of share ownership entry
-class ShareEntry(Base):
+class ShareEntry(GeneralRow, Base):
     __tablename__ = "shares"
 
     # columns
@@ -241,5 +254,6 @@ mapper_registry.metadata.create_all(engine)
 
 
 if __name__ == "__main__":
-    with get_session() as session:
-        pass
+    with generate_session() as session:
+        for i in session.execute(sq.select(Profile)):
+            print(i)
