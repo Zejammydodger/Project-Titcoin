@@ -209,16 +209,17 @@ class TitCoin(commands.Cog):
             
     @commands.command()
     async def leaderboard(self, ctx: commands.Context):
-        # get top 10 wealthiest people in tiddleton
-        profs = sorted(self.profiles["profiles"].values(), key=lambda x: x.currentBal, reverse=True)[:10]
-        index = IndexColumn(startsAt=1)
-        name = BaseColumn("name")
-        bal = BaseColumn("Balance in tc")
-        table = Table([index , name , bal])
-        
-        for p in profs:
-            user = ctx.guild.get_member(p.discordID)
-            table.addRow(None , user.display_name if user is not None else "[unkown user]" , math.floor(p.currentBal))
+        with self.sessionmaker() as session:
+            # get top 10 wealthiest people in tiddleton
+            profiles = sorted([row[0] for row in session.execute(sq.select(sqlh.Profile))], key=lambda x: x.balance, reverse=True)[:10]
+            index = IndexColumn(startsAt=1)
+            name = BaseColumn("name")
+            bal = BaseColumn("Balance in tc")
+            table = Table([index, name, bal])
+
+            for profile in profiles:
+                user = ctx.guild.get_member(profile.id)
+                table.addRow(None, user.display_name if user is not None else "[unknown user]", math.floor(profile.balance))
         
         embed = discord.Embed(title="Top 10 Richest people in Tiddleton", description=f"```{str(table)}```")
         await ctx.send(embed=embed)
