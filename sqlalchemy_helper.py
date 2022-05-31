@@ -3,6 +3,8 @@ import sqlalchemy.orm as orm
 from decimal import Decimal
 import datetime
 import time
+import discord.ext.commands
+import math
 
 with open("secrets/password.txt", mode="r") as file:
     password = file.readline()
@@ -59,6 +61,32 @@ class Profile(GeneralRow, Base):
         # adds a log into the history
         self.session.add(BalanceSlice(self, self._balance, time, tag))
 
+    def get_embed(self, bot: discord.ext.commands.Bot):
+        user = bot.get_user(self.id)
+
+        title = f"Titcoin balance for [{user.display_name}]"
+        description = f"Your total Titcoin Balance is:\n`{self.balance}tc`\n{'**You are the wealthiest person in tiddleton**' if self.is_richest else ''}"
+        color = 0xFFD700 if self.is_richest else 0x000000
+        embed = discord.Embed(title=title, description=description, color=color)
+
+        # create worth history graph etc
+        used_history: list[BalanceSlice] = self.history[:10]
+        oldest = used_history[-1]
+        newest = used_history[0]
+        max_balance = max([slice.balance for slice in used_history])
+        max_balance = max_balance if max_balance > 0 else 1
+        graph = ""
+        for slice in used_history:
+            slice: BalanceSlice
+            graph += slice.time.__str__() + " | "
+            print(slice)
+            multiplier = slice.balance / max_balance
+            graph += ("#" * math.ceil(10 * multiplier))
+            graph += "\n"
+
+        embed.add_field(name=f"Worth history [{oldest.time} to {newest.time}]", value=f"```{graph}```")
+        return embed
+
     @property
     def worth(self):
         return self.balance + sum([share_entry.worth for share_entry in self.share_entries])
@@ -67,7 +95,6 @@ class Profile(GeneralRow, Base):
     def is_richest(self):
         result = self.session.execute(sq.select(self.__class__))
         return self == max([row[0] for row in result], key=lambda x: x.balance)
-
 
     @property
     def history(self):

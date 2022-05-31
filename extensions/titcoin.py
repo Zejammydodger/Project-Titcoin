@@ -200,14 +200,12 @@ class TitCoin(commands.Cog):
     async def titcoin(self, ctx: commands.Context, user: discord.Member = None):
         # displays the users balance
         # with some other funky stuff
-        if user is None:
-            user = ctx.author
-        richest: Profile = max(self.profiles["profiles"].values(), key=lambda x: x.currentBal)
-        isrichest: bool = user.id == richest.discordID
-        prof = self.profiles["profiles"][user.id]
-        embed = prof.getEmbed(user, isrichest)
-        await ctx.send(embed=embed)
-        print(prof)
+        user = ctx.author if not user else user
+        with self.sessionmaker() as session:
+            profile = self.get_profile(session, user)
+            embed = profile.get_embed(self.bot)
+            await ctx.send(embed=embed)
+            print(profile)
             
     @commands.command()
     async def leaderboard(self, ctx: commands.Context):
