@@ -1,10 +1,8 @@
-import discord, asyncio, math, random, datetime , time
+import discord, asyncio, math, random, datetime, time
 from discord.ext import commands, tasks
-from sqlHelper import Profile, Company, Share, load, save, initDataBase, blankHistory
 from extensions import util
 from extensions.perks.perk import Perk
-from Table import Table , BaseColumn , IndexColumn , PercentOfColumn
-from Graph import BasicTextGraph , BasicGraph , AutoUpdateGraph
+from Table import Table, BaseColumn, IndexColumn, PercentOfColumn
 import sqlalchemy_helper as sqlh
 import sqlalchemy as sq
 import sqlalchemy.orm as orm
