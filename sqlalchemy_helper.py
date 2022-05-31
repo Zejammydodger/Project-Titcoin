@@ -65,7 +65,9 @@ class Profile(GeneralRow, Base):
 
     @property
     def is_richest(self):
-        pass
+        result = self.session.execute(sq.select(self.__class__))
+        return self == max([row[0] for row in result], key=lambda x: x.balance)
+
 
     @property
     def history(self):
@@ -256,4 +258,4 @@ mapper_registry.metadata.create_all(engine)
 if __name__ == "__main__":
     with generate_session() as session:
         for i in session.execute(sq.select(Profile)):
-            print(i)
+            print(f"{i[0]} - {i[0].is_richest}")
