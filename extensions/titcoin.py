@@ -48,7 +48,7 @@ START_BALANCE = 0
 
 ### titcoin values
 
-class test(commands.Cog):
+"""class test(commands.Cog):
     def __init__(self , bot):
         super().__init__()
         bot.add_cog(self)
@@ -73,7 +73,7 @@ class test(commands.Cog):
     @commands.command()
     async def testAutoGraph(self , ctx : commands.Context):
         #tests the auto graph functionality
-        pass 
+        pass"""
 
 
 class TitCoin(commands.Cog):
@@ -224,7 +224,7 @@ class TitCoin(commands.Cog):
         embed = discord.Embed(title="Top 10 Richest people in Tiddleton", description=f"```{str(table)}```")
         await ctx.send(embed=embed)
                 
-    @commands.command()
+    """@commands.command()
     async def sell_to(self, ctx: commands.Context, user2: discord.Member):
         # WIP
         
@@ -287,7 +287,7 @@ class TitCoin(commands.Cog):
             await ctx.send(embed=discord.Embed(title="Trade accepted", color=0x00ff00))
         else:
             # trade declined
-            await ctx.send(embed=discord.Embed(title="Trade declined", color=0xff0000))
+            await ctx.send(embed=discord.Embed(title="Trade declined", color=0xff0000))"""
         
     @commands.command()
     async def wealth_dist(self, ctx: commands.Context, top: int = 15, granularity: int = 10):
@@ -317,7 +317,6 @@ class TitCoin(commands.Cog):
     ### cog unload
     def cog_unload(self):
         print("unloading...")
-        save(self.connection, self.profiles)
         return super().cog_unload()
 
 
@@ -336,4 +335,4 @@ def setup(bot):
     server_mute.ServerMute(bot, tc)
     start_company.StartCompany(bot, tc)
     
-    test(bot)
+    #test(bot)
