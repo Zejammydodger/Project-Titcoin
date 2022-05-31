@@ -292,15 +292,18 @@ class TitCoin(commands.Cog):
     @commands.command()
     async def wealth_dist(self, ctx: commands.Context, top: int = 15, granularity: int = 10):
         # produces a leaderboard type thing but its a percentage distribution of wealth, ie #1 == 100% and #2 is some percentage of #1
-        profs = sorted(self.profiles["profiles"].values(), key=lambda x: x.currentBal, reverse=True)[:top]
-        max_bal = profs[0].currentBal
-        index = IndexColumn(startsAt=1, padding=0)
-        name = BaseColumn("Name", padding=0)
-        percent_of_max = PercentOfColumn("relative wealth to #1", max_bal, granularity=granularity, padding=0)
-        table = Table([index, name, percent_of_max])
-        for prof in profs:
-            user: discord.Member = ctx.guild.get_member(prof.discordID)
-            table.addRow(None, user.display_name if user is not None else "[unkown user]", math.floor(prof.currentBal))
+        with self.sessionmaker() as session:
+            profiles: list[sqlh.Profile] = sorted([row[0] for row in session.execute(sq.select(sqlh.Profile))], key=lambda x: x.balance, reverse=True)[:10]
+
+            max_bal = profiles[0].balance
+            index = IndexColumn(startsAt=1, padding=0)
+            name = BaseColumn("Name", padding=0)
+            percent_of_max = PercentOfColumn("relative wealth to #1", max_bal, granularity=granularity, padding=0)
+
+            table = Table([index, name, percent_of_max])
+            for profile in profiles:
+                user: discord.Member = ctx.guild.get_member(profile.id)
+                table.addRow(None, user.display_name if user is not None else "[unkown user]", math.floor(profile.balance))
         await ctx.send(embed=discord.Embed(title=f"distribution of wealth in tiddleton", description=f"```{str(table)}```"))
 
     @commands.command()
